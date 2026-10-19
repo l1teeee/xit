@@ -1,9 +1,5 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter_Tight, JetBrains_Mono } from 'next/font/google';
-import { SiteBackground } from '@/components/layout/SiteBackground';
-import { SmoothScroll } from '@/components/layout/SmoothScroll';
-import { NoiseOverlay } from '@/components/effects/NoiseOverlay';
-import { CustomCursor } from '@/components/effects/CustomCursor';
 import { site } from '@/data/site';
 import { getSiteUrl } from '@/lib/siteUrl';
 import './globals.css';
@@ -35,13 +31,9 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${interTight.variable} ${jetBrainsMono.variable}`}>
-      <body className="bg-bg text-ink font-sans antialiased">
-        <SiteBackground />
-        <SmoothScroll />
+    <html lang="en" className={`${interTight.variable} ${jetBrainsMono.variable} overflow-hidden`}>
+      <body className="h-dvh min-h-0 overflow-hidden bg-bg text-ink font-sans antialiased">
         {children}
-        <NoiseOverlay />
-        <CustomCursor />
       </body>
     </html>
   );

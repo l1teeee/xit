@@ -381,7 +381,6 @@ export const Dither = ({
   style
 }: DitherProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const wakeRef = useRef<(() => void) | null>(null);
   const settings: Settings = {
     waveSpeed,
@@ -414,15 +413,19 @@ export const Dither = ({
 
   useEffect(() => {
     const container = containerRef.current;
-    const canvas = canvasRef.current;
-    const gl = canvas?.getContext('webgl2', {
+    if (!container) return undefined;
+    // Each effect owns its canvas so Strict Mode never reuses a lost context.
+    const canvas = document.createElement('canvas');
+    canvas.className = 'dither-canvas';
+    canvas.setAttribute('aria-hidden', 'true');
+    const gl = canvas.getContext('webgl2', {
       alpha: true,
       premultipliedAlpha: true,
       antialias: false,
       depth: false,
       stencil: false
     });
-    if (!container || !canvas || !gl) return undefined;
+    if (!gl) return undefined;
 
     const wave = link(gl, WAVE_FRAGMENT);
     const dither = link(gl, DITHER_FRAGMENT);
@@ -432,6 +435,7 @@ export const Dither = ({
       gl.getExtension('WEBGL_lose_context')?.loseContext();
       return undefined;
     }
+    container.appendChild(canvas);
 
     const buffer = gl.createBuffer();
     const vao = gl.createVertexArray();
@@ -761,14 +765,13 @@ export const Dither = ({
       gl.deleteVertexArray(vao);
       gl.deleteTexture(field);
       gl.deleteFramebuffer(framebuffer);
+      canvas.remove();
       gl.getExtension('WEBGL_lose_context')?.loseContext();
     };
   }, []);
 
   return (
-    <div ref={containerRef} className={`dither-container${className ? ` ${className}` : ''}`} style={{ background: typeof backgroundColor === 'string' ? backgroundColor : `rgb(${backgroundColor.map(channel => Math.round(channel * 255)).join(' ')})`, ...style }}>
-      <canvas ref={canvasRef} className="dither-canvas" aria-hidden="true" />
-    </div>
+    <div ref={containerRef} className={`dither-container${className ? ` ${className}` : ''}`} style={{ background: typeof backgroundColor === 'string' ? backgroundColor : `rgb(${backgroundColor.map(channel => Math.round(channel * 255)).join(' ')})`, ...style }} />
   );
 };
 
