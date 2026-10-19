@@ -6,7 +6,7 @@ import { getPointer, retainPointer } from '@/lib/pointer';
 import './Dither.css';
 
 export type DitherColor = string | [number, number, number];
-export type DitherMode = 'bayer' | 'bayer4' | 'bayer2' | 'halftone' | 'lines' | 'crosshatch' | 'noise' | 'none';
+export type DitherMode = 'ascii' | 'dots' | 'dither' | 'hybrid' | 'bayer' | 'bayer4' | 'bayer2' | 'halftone' | 'lines' | 'crosshatch' | 'noise' | 'none';
 export type DitherMouseEffect = 'erase' | 'reveal' | 'ripple';
 
 export interface DitherProps {
@@ -65,7 +65,11 @@ type Ripple = { x: number; y: number; age: number };
 
 type Program = { program: WebGLProgram; uniforms: Record<string, WebGLUniformLocation | null> };
 
-const MODES: Record<string, number> = {
+const MODES: Record<DitherMode, number> = {
+  ascii: 8,
+  dots: 9,
+  dither: 0,
+  hybrid: 10,
   bayer: 0,
   bayer4: 1,
   bayer2: 2,
@@ -213,6 +217,8 @@ uniform sampler2D uField;
 uniform ivec2 uFieldSize;
 uniform float uCellDevice;
 uniform int uMode;
+uniform int uPreviousMode;
+uniform float uModeMix;
 uniform float uColorNum;
 uniform vec3 uWave;
 uniform vec3 uBackground;
@@ -241,31 +247,27 @@ const float bayer4[16] = float[16](
 
 const float bayer2[4] = float[4](0.0 / 4.0, 2.0 / 4.0, 3.0 / 4.0, 1.0 / 4.0);
 
-float threshold(vec2 cell) {
-  if (uMode == 1) {
+float threshold(vec2 cell, int mode) {
+  if (mode == 1) {
     ivec2 c = ivec2(mod(cell, 4.0));
     return bayer4[c.y * 4 + c.x];
   }
-  if (uMode == 2) {
+  if (mode == 2) {
     ivec2 c = ivec2(mod(cell, 2.0));
     return bayer2[c.y * 2 + c.x];
   }
-  if (uMode == 3) {
-    vec2 r = vec2(cell.x + cell.y, cell.x - cell.y) * 0.70710678 / 4.0;
-    return clamp(length(fract(r) - 0.5) * 1.41421356, 0.0, 0.999);
-  }
-  if (uMode == 4) {
+  if (mode == 4) {
     return abs(fract(cell.y / 4.0) - 0.5) * 2.0 * 0.999;
   }
-  if (uMode == 5) {
+  if (mode == 5) {
     float a = abs(fract((cell.x + cell.y) / 6.0) - 0.5) * 2.0;
     float b = abs(fract((cell.x - cell.y) / 6.0) - 0.5) * 2.0;
     return min(a, b) * 0.999;
   }
-  if (uMode == 6) {
+  if (mode == 6) {
     return fract(52.9829189 * fract(dot(cell, vec2(0.06711056, 0.00583715))));
   }
-  if (uMode == 7) {
+  if (mode == 7) {
     return 0.25;
   }
   ivec2 c = ivec2(mod(cell, 8.0));
@@ -277,19 +279,73 @@ vec3 toSrgb(vec3 c) {
   return mix(c * 12.92, 1.055 * pow(c, vec3(1.0 / 2.4)) - 0.055, step(0.0031308, c));
 }
 
-void main() {
+float fieldAt(vec2 cell) {
+  vec4 value = texelFetch(uField, clamp(ivec2(cell), ivec2(0), uFieldSize - 1), 0);
+  return value.r + value.g / 255.0;
+}
+
+// Seven rows of five bits per glyph; dense hash and at-sign marks are omitted for legibility.
+const uint glyphRows[42] = uint[42](
+  0u, 0u, 0u, 0u, 0u, 0u, 0u,
+  0u, 0u, 0u, 0u, 0u, 4u, 4u,
+  0u, 4u, 4u, 0u, 4u, 4u, 0u,
+  0u, 0u, 0u, 31u, 0u, 0u, 0u,
+  0u, 4u, 4u, 31u, 4u, 4u, 0u,
+  0u, 21u, 14u, 31u, 14u, 21u, 0u
+);
+
+float asciiInk(vec2 pixel, float density) {
+  ivec2 local = ivec2(floor(mod(pixel, vec2(8.0, 14.0)))) - ivec2(1, 3);
+  if (local.x < 0 || local.x >= 5 || local.y < 0 || local.y >= 7) return 0.0;
+  int glyph = int(floor(density * 5.99));
+  uint row = glyphRows[glyph * 7 + 6 - local.y];
+  return float((row >> uint(4 - local.x)) & 1u);
+}
+
+vec4 screenColor(int mode) {
+  vec2 pixel = gl_FragCoord.xy * 2.0 / uCellDevice;
+  vec2 pitch = mode == 8 ? vec2(8.0, 14.0) : vec2(8.0);
+  vec2 screen = pixel;
+  if (mode == 3) screen = vec2(pixel.x + pixel.y, pixel.y - pixel.x) * 0.70710678;
+  vec2 center = (floor(screen / pitch) + 0.5) * pitch;
+  if (mode == 3) center = vec2(center.x - center.y, center.x + center.y) * 0.70710678;
+  float density = smoothstep(0.22, 0.86, fieldAt(center / 2.0));
+  float ink;
+  if (mode == 8) {
+    ink = asciiInk(pixel, pow(density, 1.8));
+  } else {
+    float radius = 3.25 * sqrt(density);
+    float distanceToDot = length(mod(screen, pitch) - pitch * 0.5);
+    float aa = 0.7 * 2.0 / uCellDevice;
+    ink = (1.0 - smoothstep(radius - aa, radius + aa, distanceToDot)) * step(0.015, density);
+    if (mode == 10) {
+      float lineDistance = abs(mod(pixel.y, 8.0) - 4.0);
+      float lines = 1.0 - smoothstep(density * 2.5 - aa, density * 2.5 + aa, lineDistance);
+      ink = mix(ink, lines, smoothstep(0.4, 0.7, density));
+    }
+  }
+  float strength = mix(0.35, 0.85, density);
+  if (mode == 8) strength *= 1.0 - 0.25 * smoothstep(0.7, 1.0, density);
+  vec3 color = toSrgb(uWave);
+  if (uPaletteCount > 1) color = toSrgb(uPalette[uPaletteCount - 1]);
+  float alpha = ink * strength;
+  if (uTransparent > 0.5) return vec4(color * alpha, alpha);
+  return vec4(mix(toSrgb(uBackground), color, alpha), 1.0);
+}
+
+vec4 renderMode(int mode) {
+  if (mode == 3 || mode >= 8) return screenColor(mode);
   vec2 cell = floor(gl_FragCoord.xy / uCellDevice);
   vec4 sampleValue = texelFetch(uField, clamp(ivec2(cell), ivec2(0), uFieldSize - 1), 0);
   float f = sampleValue.r + sampleValue.g / 255.0;
-  float t = threshold(cell) - 0.25;
+  float t = threshold(cell, mode) - 0.25;
 
   if (uPaletteCount > 1) {
     float n = float(uPaletteCount);
     float v = f + t / (n - 1.0);
     v = clamp(v - mix(0.2, 0.0, smoothstep(0.45, 0.8, v)), 0.0, 1.0);
     int index = int(floor(v * (n - 1.0) + 0.5));
-    outColor = vec4(toSrgb(uPalette[index]), 1.0);
-    return;
+    return vec4(toSrgb(uPalette[index]), 1.0);
   }
 
   float levels = max(uColorNum, 1.01) - 1.0;
@@ -297,19 +353,29 @@ void main() {
     float v = f + t / levels;
     v = clamp(v - mix(0.2, 0.0, smoothstep(0.45, 0.8, v)), 0.0, 1.0);
     float a = floor(v * levels + 0.5) / levels;
-    outColor = vec4(toSrgb(uWave) * a, a);
-    return;
+    return vec4(toSrgb(uWave) * a, a);
   }
 
   float base = dot(uBackground, vec3(0.2126, 0.7152, 0.0722));
   vec3 offset = (uWave - vec3(base)) * f + t / levels;
   float luminance = dot(uBackground + offset, vec3(0.2126, 0.7152, 0.0722));
-  offset -= mix(0.2, 0.0, smoothstep(0.45, 0.8, luminance));
   bool rising = dot(uWave, vec3(0.2126, 0.7152, 0.0722)) >= base;
+  // Faint waves are pulled back toward the background so they do not speckle.
+  // Waves lighter than the background fade toward dark, waves darker than it fade toward light.
+  float faintness = rising ? luminance : 1.0 - luminance;
+  float pull = mix(0.2, 0.0, smoothstep(0.45, 0.8, faintness));
+  offset -= rising ? pull : -pull;
   float lower = rising ? 0.0 : -max(uBackground.r, max(uBackground.g, uBackground.b));
   float upper = rising ? 1.0 - min(uBackground.r, min(uBackground.g, uBackground.b)) : 0.0;
   offset = floor(clamp(offset, lower, upper) * levels + 0.5) / levels;
-  outColor = vec4(toSrgb(uBackground + offset), 1.0);
+  // Quantization must not make a mark darker than either configured endpoint.
+  vec3 color = clamp(uBackground + offset, min(uBackground, uWave), max(uBackground, uWave));
+  return vec4(toSrgb(color), 1.0);
+}
+
+void main() {
+  outColor = renderMode(uMode);
+  if (uModeMix < 1.0) outColor = mix(renderMode(uPreviousMode), outColor, uModeMix);
 }`;
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
@@ -320,6 +386,7 @@ const compile = (gl: WebGL2RenderingContext, type: number, source: string) => {
   gl.shaderSource(shader, source);
   gl.compileShader(shader);
   if (gl.getShaderParameter(shader, gl.COMPILE_STATUS)) return shader;
+  console.error('Dither shader compilation failed:', gl.getShaderInfoLog(shader));
   gl.deleteShader(shader);
   return null;
 };
@@ -341,6 +408,7 @@ const link = (gl: WebGL2RenderingContext, fragmentSource: string): Program | nul
   gl.deleteShader(vertex);
   gl.deleteShader(fragment);
   if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+    console.error('Dither program linking failed:', gl.getProgramInfoLog(program));
     gl.deleteProgram(program);
     return null;
   }
@@ -417,6 +485,7 @@ export const Dither = ({
     // Each effect owns its canvas so Strict Mode never reuses a lost context.
     const canvas = document.createElement('canvas');
     canvas.className = 'dither-canvas';
+    canvas.dataset.canvas = 'dither-background';
     canvas.setAttribute('aria-hidden', 'true');
     const gl = canvas.getContext('webgl2', {
       alpha: true,
@@ -495,6 +564,9 @@ export const Dither = ({
     let visible = false;
     let lastPointerX = Number.NaN;
     let lastPointerY = Number.NaN;
+    let currentMode = settingsRef.current.mode;
+    let previousMode = currentMode;
+    let modeChangedAt = Number.NEGATIVE_INFINITY;
 
     const allocate = () => {
       const s = settingsRef.current;
@@ -518,6 +590,13 @@ export const Dither = ({
       const s = settingsRef.current;
       const expected = Math.max(1, Math.round(s.pixelSize * view.ratio));
       if (expected !== view.cell) allocate();
+      const now = performance.now();
+      if (s.mode !== currentMode) {
+        if (now - modeChangedAt >= 175) previousMode = currentMode;
+        currentMode = s.mode;
+        modeChangedAt = now;
+      }
+      const modeMix = reduce || s.disableAnimation ? 1 : Math.min(1, (now - modeChangedAt) / 350);
 
       let trailCount = 0;
       for (let i = 0; i < trailPoints.length && trailCount < MAX_TRAIL; i++) {
@@ -569,6 +648,8 @@ export const Dither = ({
       gl.uniform2i(d.uFieldSize, view.cols, view.rows);
       gl.uniform1f(d.uCellDevice, view.cell);
       gl.uniform1i(d.uMode, s.mode);
+      gl.uniform1i(d.uPreviousMode, previousMode);
+      gl.uniform1f(d.uModeMix, modeMix * modeMix * (3 - 2 * modeMix));
       gl.uniform1f(d.uColorNum, s.colorNum);
       gl.uniform3fv(d.uWave, toColor(s.waveColor));
       const transparent = s.backgroundColor === 'transparent';

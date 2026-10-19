@@ -2,14 +2,14 @@ export type RasterVariant = 'lines' | 'halftone' | 'dots' | 'dither' | 'hybrid';
 
 export interface Site {
   name: string;
-  year: string;
-  coordinates: string;
   description: string;
 }
 
+export interface HeroPhrase {
+  lines: string[];
+}
+
 export interface HeroCopy {
-  label: string;
-  titleLines: string[];
-  subtitle: string;
-  indicators: string[];
+  // Every phrase starts with the same letter. The first phrase is the static heading text.
+  phrases: HeroPhrase[];
 }

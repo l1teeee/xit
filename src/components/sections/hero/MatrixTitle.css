@@ -1,0 +1,166 @@
+/*
+  The title is plain text over the background: a block of fixed-width cells in an old terminal face. Every
+  line is centered inside the block, the block is centered in the hero, and the block box is exactly the
+  capital letters of the finished phrase: its top edge is the cap line of the first line and its bottom edge
+  is the baseline of the last. The block is sized by the widest line of every phrase, so it never changes while
+  the phrases change, and neither the cursor nor the characters that are not typed yet move any box.
+
+  The metrics (--advance-em, --tracking-em, --space-em, --cap-em, --ascent-em, --line-em, --title-em and
+  --title-lines) are set inline from matrixTitleMetrics.ts, which sizes the block in code with the same numbers.
+*/
+.matrix-title {
+  --cell-em: calc(var(--advance-em) + var(--tracking-em));
+  /* Widest line: 36.7 percent of the viewport on phones, sliding to 17.3 percent from 480 to 1280 px, capped at 331 px. */
+  --title-width: min(331px, max(min(36.72vw, 149.3px + 5.616vw), 17.28vw));
+  /* A capital never gets shorter than this, which keeps VT323 readable on the smallest phones. */
+  --min-glyph-height: 12.6px;
+  --viewport-height: 100svh;
+  /* Equal clearance above and below keeps the block centered and off the background picker. */
+  --title-max-height: calc(var(--viewport-height) - 2 * (var(--picker-height) + 36px));
+  --half-leading-em: calc((var(--line-em) - 1) / 2);
+  --cap-top-em: calc(var(--half-leading-em) + var(--ascent-em) - var(--cap-em));
+  --block-em: calc(var(--cap-em) + (var(--title-lines) - 1) * var(--line-em));
+  /* Reach of the white halo that keeps the letters clean over the background marks. It grows with the title. */
+  --halo: 1px;
+  --halo-negative: calc(var(--halo) * -1);
+  --halo-half: calc(var(--halo) / 2);
+  --halo-half-negative: calc(var(--halo-half) * -1);
+
+  position: relative;
+  grid-area: 1 / 1;
+  width: calc(var(--title-em) * 1em);
+  height: calc(var(--block-em) * 1em);
+  font-family: var(--font-vt323), ui-monospace, monospace;
+  font-size: max(
+    calc(var(--min-glyph-height) / var(--cap-em)),
+    min(
+      calc(var(--title-width) / var(--title-em)),
+      calc(var(--title-max-height) / var(--block-em))
+    )
+  );
+  font-synthesis: none;
+  line-height: var(--line-em);
+  color: #000;
+  /* Two rings of white copies hug the glyphs, so the halo follows the letters and never reads as a box. */
+  text-shadow:
+    var(--halo) 0 0 #fff, var(--halo-negative) 0 0 #fff, 0 var(--halo) 0 #fff, 0 var(--halo-negative) 0 #fff,
+    var(--halo) var(--halo) 0 #fff, var(--halo-negative) var(--halo) 0 #fff,
+    var(--halo) var(--halo-negative) 0 #fff, var(--halo-negative) var(--halo-negative) 0 #fff,
+    var(--halo-half) 0 0 #fff, var(--halo-half-negative) 0 0 #fff, 0 var(--halo-half) 0 #fff, 0 var(--halo-half-negative) 0 #fff,
+    var(--halo-half) var(--halo-half) 0 #fff, var(--halo-half-negative) var(--halo-half) 0 #fff,
+    var(--halo-half) var(--halo-half-negative) 0 #fff, var(--halo-half-negative) var(--halo-half-negative) 0 #fff,
+    0 0 var(--halo) #fff;
+  text-transform: uppercase;
+  pointer-events: none;
+  user-select: none;
+}
+
+@media (min-width: 768px) {
+  .matrix-title {
+    --halo: 1.1px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .matrix-title {
+    --halo: 1.4px;
+  }
+}
+
+@supports (height: 100dvh) {
+  .matrix-title {
+    --viewport-height: 100dvh;
+  }
+}
+
+.matrix-text {
+  display: flex;
+  flex-direction: column;
+}
+
+/* A glitch cut: a copy of the text clipped to one band, with a copy in hexadecimal digits fading in over it. */
+.matrix-cut {
+  position: absolute;
+  inset: 0;
+}
+
+.matrix-cut-digits {
+  position: absolute;
+  inset: 0;
+}
+
+.matrix-line {
+  display: flex;
+  flex: none;
+  justify-content: center;
+  height: calc(var(--line-em) * 1em);
+}
+
+/* Pulls the first line up so the block starts at the cap line instead of at the line box. */
+.matrix-line:first-child {
+  margin-top: calc(var(--cap-top-em) * -1em);
+}
+
+.matrix-run {
+  position: relative;
+  display: flex;
+}
+
+.matrix-cell {
+  position: relative;
+  flex: none;
+  width: calc(var(--cell-em) * 1em);
+  text-align: center;
+  white-space: pre;
+}
+
+/* A word space is thinner than a letter cell. */
+.matrix-cell.is-space {
+  width: calc(var(--space-em) * 1em);
+}
+
+/* The cursor may stand past the last character, so this cell hangs off the end of the line. */
+.matrix-cell.matrix-end {
+  position: absolute;
+  top: 0;
+  left: 100%;
+  height: 100%;
+}
+
+/* A typed letter fades in from its digit, and an erased one fades out. The cursor sits on the cell, not the glyph. */
+.matrix-glyph {
+  transition: opacity 60ms linear;
+}
+
+.matrix-cell.is-hidden .matrix-glyph {
+  opacity: 0;
+}
+
+.matrix-cell.is-digit .matrix-glyph {
+  opacity: 0.6;
+}
+
+/* A solid block the size of a capital letter, in the middle of its cell, with the same white halo as the letters. */
+.matrix-cell.is-cursor::after {
+  content: '';
+  position: absolute;
+  top: calc(var(--cap-top-em) * 1em);
+  left: 50%;
+  width: min(calc(var(--advance-em) * 1em), 100%);
+  height: calc(var(--cap-em) * 1em);
+  background: #000;
+  box-shadow: 0 0 0 var(--halo) #fff;
+  transform: translateX(-50%);
+}
+
+.matrix-title[data-cursor='hidden'] .is-cursor::after {
+  display: none;
+}
+
+.matrix-title[data-cursor='blinking'] .is-cursor::after {
+  animation: matrix-cursor-blink 1s steps(1, end) infinite;
+}
+
+@keyframes matrix-cursor-blink {
+  50% { opacity: 0; }
+}

@@ -1,0 +1,7 @@
+@keyframes ascii-cursor-blink {
+  50% { opacity: 0; }
+}
+
+.ascii-cursor-blink {
+  animation: ascii-cursor-blink 1s steps(1, end) infinite;
+}

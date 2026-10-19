@@ -1,11 +1,11 @@
 import type { Metadata, Viewport } from 'next';
-import { Inter_Tight, JetBrains_Mono } from 'next/font/google';
+import { JetBrains_Mono, VT323 } from 'next/font/google';
 import { site } from '@/data/site';
 import { getSiteUrl } from '@/lib/siteUrl';
 import './globals.css';
 
-const interTight = Inter_Tight({ subsets: ['latin'], variable: '--font-inter-tight', display: 'swap' });
 const jetBrainsMono = JetBrains_Mono({ subsets: ['latin'], variable: '--font-jetbrains-mono', display: 'swap' });
+const vt323 = VT323({ weight: '400', subsets: ['latin'], variable: '--font-vt323', display: 'swap' });
 const title = 'AACII - Digital systems studio';
 
 export const metadata: Metadata = {
@@ -23,15 +23,15 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: '#120f17',
-  colorScheme: 'dark',
+  themeColor: '#ffffff',
+  colorScheme: 'light',
   width: 'device-width',
   initialScale: 1,
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${interTight.variable} ${jetBrainsMono.variable} overflow-hidden`}>
+    <html lang="en" className={`${jetBrainsMono.variable} ${vt323.variable} overflow-hidden`}>
       <body className="h-dvh min-h-0 overflow-hidden bg-bg text-ink font-sans antialiased">
         {children}
       </body>

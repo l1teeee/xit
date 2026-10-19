@@ -10,7 +10,7 @@ export interface QualityProfile {
 export const qualityProfiles: Record<QualityTier, QualityProfile> = {
   high: { tier: 'high', dprCap: 2, rasterCell: 8, ditherPixel: 2 },
   medium: { tier: 'medium', dprCap: 1.5, rasterCell: 9, ditherPixel: 2 },
-  low: { tier: 'low', dprCap: 1, rasterCell: 11, ditherPixel: 3 },
+  low: { tier: 'low', dprCap: 1, rasterCell: 11, ditherPixel: 2 },
 };
 
 export function getQualityProfile(): QualityProfile {

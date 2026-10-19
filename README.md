@@ -1,8 +1,15 @@
 # AACII - Systems in motion
 
-A single-screen interactive hero for AACII. A rotating WebGL globe switches
-between lines, halftone, dots, dither and hybrid treatments over animated
-Bayer-dithered waves. Built with Next.js, React, three.js and GSAP.
+A single-screen hero for AACII: a white page with an animated gray ASCII wave
+field, a dull ASCII trail that follows the pointer, and one title typed in an
+old terminal style. A small bottom-right picker switches only the
+background between ASCII, dots, halftone, dither, lines and hybrid. Four phrases
+that all start with S take turns, "SYSTEMS / IN MOTION.", "SIGNAL / AND NOISE.",
+"STRUCTURE / IN FLUX." and "SHAPES / THAT BREATHE.". Each one is typed in, with
+every character decoding through hexadecimal digits first, held, and erased
+back to the first S before the next one grows from it, with a soft synthesized
+keyboard click. Built with Next.js, React, a WebGL wave field, a 2D canvas and
+the Web Audio API.
 
 ## Development
 
@@ -23,34 +30,283 @@ port. `npm run check` runs lint, typecheck and build together.
 
 - `src/app/`: page, root layout, metadata, fonts and global styles.
 - `src/components/sections/Hero.tsx`: the single-screen composition.
-- `src/components/sections/hero/`: headline, entrance animations, readouts,
-  raster controls, shared state and the static globe poster.
-- `src/components/layout/SiteBackground.tsx`: the Dither configuration.
-- `src/components/effects/`: Dither, RasterSphere and the shared R3F shader canvas.
-- `src/shaders/`: globe shader and its noise, raster and dither chunks.
-- `src/hooks/` and `src/lib/`: motion, visibility, pointer, quality and URL helpers.
-- `src/data/`: hero copy, metadata content and their types.
-- `public/textures/earth-land.png`: the globe's land mask.
+- `src/components/sections/hero/`: the title.
+  - `MatrixTitle.tsx` and `MatrixTitle.css`: the terminal style text block, the
+    heading and the lifecycle (font, activity, cleanup).
+  - `matrixTitleMetrics.ts`: the title geometry in em, the single source for the
+    CSS and for the code that sizes the block.
+  - `matrixTitleView.ts`: builds the cells of each phrase, draws typewriter
+    frames into them and draws the glitch cuts. It measures something only when
+    the phrase changes.
+  - `matrixTitleCuts.ts`: decides when and where the hexadecimal glitch cuts
+    happen, and the clip paths of the bands.
+  - `hexDecode.ts`: the hexadecimal digit a cell shows at each flicker step.
+  - `matrixTitleFont.ts`: waits for VT323 to load.
+  - `ascii-art-title/`: the shelved ASCII art title, see below.
+- `src/lib/typewriter/`: what every title shares. `typewriterLoop.ts` is the
+  single requestAnimationFrame loop and its type, hold, erase-to-S and phrase
+  switch state machine, `keySound.ts` the synthesized key click and its audio
+  unlock, `watchActivity.ts` reports when the title is offscreen or the tab is
+  hidden so the loop can pause.
+- `src/components/layout/SiteBackground.tsx`: the Dither configuration, local
+  background picker state and the mount point of the pointer trail.
+- `src/components/effects/`: Dither, and the ASCII trail (`AsciiTrail.tsx`,
+  `asciiTrailRunner.ts` for the canvas and loop, `asciiTrailField.ts` for the
+  cell model). RasterSphere and the shared R3F shader canvas are kept but not
+  rendered.
+- `src/components/sections/hero/HeroSphere.tsx`, `SpherePoster.tsx` and
+  `HeroStage.tsx`: the globe wiring, kept but not rendered.
+- `src/shaders/`: globe shader and its noise, raster and dither chunks, kept but
+  not rendered.
+- `src/hooks/` and `src/lib/`: motion, visibility, pointer, quality, hashing, font and URL helpers.
+- `src/data/`: the hero phrases, metadata content and their types.
+- `public/textures/earth-land.png`: the globe's land mask, kept for the globe.
 - `docs/ASSETS.md`: asset provenance.
+
+## The globe
+
+The rotating WebGL globe is no longer part of the page. Its component and
+everything it needs stay in the repository, along with the `three` and
+`@react-three/fiber` dependencies, so it can be mounted again by rendering
+`HeroSphere` inside `HeroStage`. Nothing of it is imported by the current page,
+so it does not reach the client bundle.
+
+## The background styles
+
+The page stays white (`#ffffff`, theme color and color scheme included). Dither
+keeps the same wave animation, intro reveal and quality profiles. ASCII is the
+initial selection on each load. All six styles cap their darkest ink at
+`#a8a8a8`, with most marks lighter. Quantization stays within the configured
+color endpoints so wave peaks cannot compete with the black title:
+
+- ASCII: the wave selects space, `.`, `:`, `-`, `+` or `*` from
+  procedural 5 by 7 bitmaps. The grid is 8 by 14 CSS pixels at the site's
+  2 pixel quality cell, with device-pixel glyph sampling and no font texture.
+  A curved density ramp favors sparse marks; dense peaks use lighter ink.
+- Dots: round dots on an 8 CSS pixel square grid, with wave-driven radius.
+- Halftone: the dot grid rotated 45 degrees, sampled at screen-cell centers.
+- Dither: the original Bayer 8 ordered dither, also available as `bayer`.
+- Lines: the existing horizontal raster on an 8 CSS pixel pitch.
+- Hybrid: dots in lighter areas, blending into horizontal lines in dense areas.
+
+The previous `bayer4`, `bayer2`, `crosshatch`, `noise` and `none` modes remain
+available through Dither's unchanged props. New modes preserve color, palette
+and transparent-background support. Shader compilation and link failures report
+the WebGL diagnostic while the plain white page remains usable.
+
+The picker is a native radio group named "Background style". Its small uppercase
+mono labels use black underlined text for the selection and gray for the other
+choices. Tab focuses the group and native arrow keys move the selection. Each
+label is at least 44 pixels wide and high, with a visible focus ring. It sits 16
+pixels from the right edge plus the right safe area inset, and is never wider
+than the viewport minus that padding on both sides. It wraps into two rows of
+three on screens up to 480 pixels wide and uses one compact row on short
+screens. The title keeps equal clearance above and below, taken from the
+picker height, so the two never overlap and the title stays centered.
+
+Switching crossfades the two raster treatments over 350 ms inside the existing
+WebGL context and animation loop. The wave field is computed once per frame;
+only during a switch does the final pass evaluate both raster styles. A style
+change does not remount the title or trail, or restart their animation or sound.
+Reduced motion switches instantly and leaves the field still. No selection is
+persisted and there are no production QA routes or style query parameters.
+
+The pointer erase and click ripple remain disabled through
+`enableMouseInteraction={false}` and `clickRipple={false}`. Their implementation
+remains available in Dither. The existing light-background luminance correction
+is preserved for the legacy raster modes.
+
+## The pointer trail
+
+Above the Dither and below the title, `AsciiTrail` is a full-screen, aria-hidden
+canvas that leaves a trail of ASCII characters where the pointer moves, like
+code typed along the path. The characters sit on a fixed 10 by 16 px grid, drawn
+in JetBrains Mono. Around the pointer a soft radius of 2 to 4 cells fills with
+cells, dense and strong in the middle and sparse at the rim. Each cell picks one
+of four glyph families at random (bits `0 1`, punctuation and operators
+`. : - = + * / \ | < > ~ ^`, brackets `[ ] { } ( )`, symbols `# $ % & @`),
+flickers through glyphs of its family for 120 ms, settles on one, and fades out
+over 0.9 to 1.2 seconds. The color is a very dull black, `rgb(10, 10, 10)`, with
+a peak alpha between 0.10 and 0.45 depending on the cell, so the title stays the
+strongest element. At most 260 cells are alive at once, and the oldest are
+dropped first.
+
+There is one `pointermove` listener, owned by the runner and removed on unmount,
+and one animation frame loop that exists only while cells are alive: when the
+last cell has faded the loop stops completely and the next pointer movement
+wakes it. Hiding the tab cancels the loop and clears the trail. The canvas uses
+the quality profile's pixel ratio cap. The trail is not mounted under reduced
+motion, nor on coarse pointers: a touch drag is claimed by the browser and there
+is no hover, so it would not behave cleanly. Pointer events of type touch are
+ignored as well.
+
+## The title
+
+The phrases live in `hero.phrases` in `src/data/site.ts`. Each has two uppercase
+lines and every phrase starts with the same letter, S. The first phrase is the
+static heading text, the rest are decorative.
+
+The title is real text in an old terminal style, set directly over the background
+with no window, panel, frame or backing. To keep the letters clean over the
+background marks, every glyph has a tight white halo made of two rings of hard
+white text shadows, 1 px reaching on phones, 1.1 px from 768 px wide and 1.4 px
+from 1280 px wide, plus a blur of the same size, so it hugs the letters and
+never reads as a box. The cursor block gets the same halo as a hard white ring.
+
+The title is centered and it never changes size or jumps while the phrases
+change. It is small and calm, like a caption in the middle of the page. It is
+sized by the widest line of all phrases, "THAT BREATHE.", which is 5.3 em wide.
+That line is about 36.7 percent of the viewport width on phones, sliding to 17.3
+percent from 480 to 1280 px, capped at 331 px. A capital letter never gets
+shorter than 12.6 px, so the font size never drops below about 22 px, which keeps
+VT323 readable on the smallest phones. The font size follows from that width and from the height
+left after the picker clearance, so the title never overflows or reaches the
+picker. Everything sits close together.
+Letters stand in fixed-width cells of VT323's 0.4 em advance plus only 0.02 em of
+tracking, a word space is a thinner 0.26 em cell, and the leading is 0.72 em, so
+the two lines almost touch with a small gap. Each line is centered in the
+viewport, and the block of capital letters is centered vertically: the block box
+starts at the cap line of the first line and ends on the baseline of the last, so
+the font's empty ascent and descent do not shift the optical center. All of these
+numbers live in `matrixTitleMetrics.ts`, which sets them as custom properties on
+the title and uses the same ones to compute the widest line.
+
+Lines are laid out by their final text and hidden until typed, so characters
+appear in place and nothing moves while typing. The cursor is a solid black block
+the size of a capital letter, drawn over the cell where the next character goes,
+and a cell hanging off the end of each line lets it stand past the last character
+without widening the line. When the loop erases back to the first S and the next
+phrase starts, every line is centered again for its new text, so the S belongs at
+a new place. The line runs slide there over 250 ms with the Web Animations API
+during the pause, so nothing jumps. Reduced motion never slides.
+
+The font is VT323, the bitmap terminal face modeled on the VT220 screen font. It
+was chosen over DotGothic16, Share Tech Mono, Silkscreen and similar faces as the
+most direct old CRT look that stays very legible.
+
+Every typed character first shows hexadecimal digits, 0 to F, changing about every
+70 ms for 120 to 180 ms, then resolves to its real letter, which fades in over 60
+ms instead of swapping. Erasing turns each character into hexadecimal digits for
+90 ms and then fades it out, still showing that digit and never its letter, right to
+left like backspace. Spaces never decode.
+The character is its own element inside its cell and only its opacity
+transitions, so the cursor on the cell never fades.
+
+Now and then the title also gets a gentle glitch cut, a digital shimmer rather
+than a jump. One to three short bands, each touching a line or part of a line,
+are cut out of the text block. Each band drifts sideways by 0.03 to 0.12 em,
+never less than 1.5 px, alternating left and right, and a copy of it in
+hexadecimal digits fades in over the real text to 60 to 85 percent opacity. The
+digits change about every 70 to 90 ms. The band eases out over 80 to 110 ms,
+then eases back and fades out over 120 to 190 ms, 200 to 300 ms in all, and ends
+as an exact copy of the real text, so nothing pops when it appears or goes. A
+cut comes 2.6 to 5.5 seconds after the last one, there are no double cuts, and
+one soft band, a burst, fires when a phrase has just been typed and another right
+before erasing begins. Every cut restarts the wait and a burst is skipped while a
+cut is still fading, so cuts never bunch up. A band is only a view of the title:
+its copies mirror what the title shows at every moment, so a letter that is
+erased is gone from the band at once. Bands are partial and leave a
+fading copy of the real text in place, so the text stays readable throughout and
+is untouched most of the time.
+
+Each band is two clones of the text layer over the same box, revealed with a
+`clip-path` polygon, while the real text is clipped away behind them with the
+complementary polygon. Only `transform` and `opacity` are animated, with the Web
+Animations API, so nothing is laid out again. One chain of timeouts schedules
+everything. It stops when the tab is hidden or the title is offscreen, and is
+cleared on unmount. Under reduced motion there are no cuts.
+
+The loop types phrase 1 completely, S first, holds about 2 seconds, then erases
+backwards one letter per keystroke until only the first S remains. That S never
+disappears: it only slides. The next phrase then types the rest of its letters
+right after the S, and so on through all four and back to the first, forever.
+Typing runs at about 85 ms per letter with random variation and a longer beat at
+the word space and the line break. Erasing runs at about 55 ms per letter. The
+cursor blinks with a CSS steps animation while the loop waits, and is solid while
+it types or erases. One requestAnimationFrame loop drives all of it; it pauses
+when the tab is hidden or the title is offscreen, resumes where it left off, and
+is cancelled on unmount. The layout is pure CSS, so there is no resize listener.
+
+## The shelved ASCII art title
+
+The earlier title, a block of `#` and `+` characters sampled from big Inter Tight
+letters, is kept for later reuse in
+`src/components/sections/hero/ascii-art-title/`. It compiles and is checked with
+the rest of the project, and nothing mounts it.
+
+To mount it again, open `src/components/sections/Hero.tsx`, import `AsciiTitle`
+from `./hero/ascii-art-title/AsciiTitle` and render
+`<AsciiTitle id="index-title" phrases={hero.phrases} />` in place of
+`MatrixTitle`. It loads Inter Tight on its own, so the page pays for that font
+only while it is mounted, and it uses the root layout's JetBrains Mono. The
+typewriter loop, the key sound and the activity watcher come from
+`src/lib/typewriter/`, the same as the terminal title.
+
+- `AsciiTitle.tsx` and `AsciiTitle.css`: the heading, the grid element, the
+  lifecycle (fonts, resize, cleanup) and the cursor blink.
+- `asciiTitleFonts.ts`: Inter Tight through `next/font` and the JetBrains Mono
+  family from the root layout.
+- `asciiTitleRaster.ts`: sizes the title for the widest phrase, draws every phrase
+  into an offscreen canvas and builds one grid of cells per phrase, all left
+  aligned at the S.
+- `asciiTitleTones.ts`: classifies coverage as blank, edge or body.
+- `asciiTitlePainter.ts`: turns a phrase grid and a typewriter frame into rows of
+  one-row segments, plus the block cursor.
+- `asciiTitleTypewriter.ts`: feeds the shared loop to the painter.
+
+## Keyboard sound
+
+Every keystroke, typing and erasing, plays a short soft click made with the Web
+Audio API. The main voice is a sine thump around 140 Hz that decays over about
+60 ms with a gentle pitch drop. A quiet noise burst (about 1.8 kHz bandpass,
+Q 0.7, then a 4.5 kHz lowpass, at less than half the thump level) adds a touch
+of body without hiss. All envelopes start at silence, rise over 4 ms and decay
+to a level far below hearing before the source stops, so nothing pops. Random
+variation is only a few percent in pitch and volume per key. Erase clicks are
+lower and softer, and the space and line break are about 1.15 times heavier.
+Voices go through a 0.11 master gain, a soft 6 kHz lowpass and a gentle
+compressor, so stacked clicks never clip and never pump. No audio files or
+libraries are used.
+
+The sound lives in `src/lib/typewriter/keySound.ts` and serves every title.
+
+Browsers block audio until the user interacts, so the `AudioContext` is created
+and resumed on the first pointer, key or touch event anywhere on the page, and
+the animation runs silently until then. The listeners are armed as soon as the
+title mounts, not once its font has loaded, and a page the user has already
+interacted with starts the context at once. They are never removed after the
+first success: a context can be suspended or interrupted later, by a device
+change, a long pause or the browser taking the audio away, and the next gesture,
+the tab becoming visible again or a `statechange` event resumes it. A key that
+finds the context not running asks it to resume, and is dropped rather than
+queued, so a late burst of clicks never plays. Every typed and every erased
+character calls the sound exactly once, and each click creates its voices and
+disconnects them when they end. If Web Audio is unavailable the title still
+animates in silence. There is no sound control or text; the sound is never needed to
+understand the page.
 
 ## Performance and accessibility
 
-The globe loads on the client with a static poster while its bundle loads.
-Each canvas has one animation driver; hidden or offscreen canvases pause.
 Dither creates a canvas per effect setup and releases its context and resources
-on cleanup, including React Strict Mode effect replay.
+on cleanup, including React Strict Mode effect replay. The trail has its own
+canvas and listener, released on unmount. The title adds no canvas and no resize
+listener: it is text in cells, sized by CSS.
 
-Quality tiers reduce resolution and raster detail for small screens, coarse
-pointers, data saving and lower CPU counts. Device pixel ratio is capped at 1
-for low quality, 1.5 for medium and 2 for high. Dither uses 3 CSS pixels per cell
-on low quality and 2 otherwise.
+Quality tiers reduce Dither resolution for small screens, coarse pointers, data
+saving and lower CPU counts. Device pixel ratio is capped at 1 for low quality,
+1.5 for medium and 2 for high. Dither uses 2 CSS pixels per cell on every tier
+so raster and character grids keep their CSS pitch; tiers differ in pixel ratio.
+The added raster styles do not add noise samples or per-frame GPU allocations.
+60 fps on integrated GPUs is a target, not a hardware benchmark established by
+the screenshot QA service.
 
-Reduced motion freezes shader time and bypasses decorative entrance animations.
-The raster controls are native radio inputs with keyboard support and visible
-focus indicators. Decorative canvases are hidden from assistive technology.
-Touch devices do not use pointer-driven distortion or a custom cursor.
-If WebGL is unavailable, the page retains its background color, globe poster,
-copy and controls without changing layout. The page fits the viewport without
+Reduced motion freezes the wave field, removes the pointer trail, and shows the
+first phrase finished at once, with no loop, no decode flicker, no cursor, no
+slide, no glitch cuts and no sound. The page has one `h1` reading "SYSTEMS IN MOTION." for
+assistive technology; the animated cells, the other phrases and the trail are
+hidden from it. The heading is visually hidden while the cells are
+pending or ready. If scripting is off, or if VT323 is unavailable, it is shown as
+visible JetBrains Mono text instead. The page fits the viewport without
 scrolling.
 
 ## Deploy to Vercel
