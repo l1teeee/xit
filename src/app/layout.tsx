@@ -6,7 +6,7 @@ import './globals.css';
 
 const jetBrainsMono = JetBrains_Mono({ subsets: ['latin'], variable: '--font-jetbrains-mono', display: 'swap' });
 const vt323 = VT323({ weight: '400', subsets: ['latin'], variable: '--font-vt323', display: 'swap' });
-const title = 'AACII - Digital systems studio';
+const title = 'XIT';
 
 export const metadata: Metadata = {
   metadataBase: new URL(getSiteUrl()),
