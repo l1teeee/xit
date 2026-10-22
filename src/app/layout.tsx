@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   title: { default: title, template: '%s | AACII' },
   description: site.description,
   applicationName: site.name,
-  keywords: ['AACII', 'generative graphics', 'interactive systems', 'realtime visuals', 'digital systems studio'],
+  keywords: ['AACII', 'digital garden', 'ASCII art', 'generative nature', 'hummingbird', 'interactive garden'],
   authors: [{ name: site.name }],
   creator: site.name,
   alternates: { canonical: '/' },

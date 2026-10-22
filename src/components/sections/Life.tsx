@@ -1,6 +1,7 @@
 import { life } from '@/data/site';
 import { MatrixTitle } from './hero/MatrixTitle';
 import { HabitatArtwork } from './life/HabitatArtwork';
+import { LifeBackdrop } from './life/LifeBackdrop';
 import { HabitatMotion } from './nature/HabitatMotion';
 import './nature/nature.css';
 
@@ -13,6 +14,7 @@ export function Life() {
       aria-labelledby="life-title"
       className="nature-habitat"
     >
+      <LifeBackdrop />
       <HabitatMotion>
         <HabitatArtwork />
       </HabitatMotion>

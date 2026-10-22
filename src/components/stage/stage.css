@@ -43,25 +43,35 @@
   pointer-events: none;
 }
 
+/* Bird height is 2/3 of its width, so "/ 3" centres the anchor box on the chosen point. */
 .garden-bird {
-  --bird-anchor-width: calc(var(--bird-life-width, min(82vw, 820px)) * 0.32);
-  top: calc(9% - var(--bird-anchor-width) * 34 / 51);
-  right: 6%;
+  --bird-anchor-width: calc(var(--bird-life-width, min(82vw, 820px)) * 0.22);
+  top: calc(12% - var(--bird-anchor-width) / 3);
+  right: calc(8% - var(--bird-anchor-width) / 2);
 }
 
 .cycle-bird {
-  --bird-anchor-width: calc(var(--bird-life-width, min(82vw, 820px)) * 0.55);
-  top: calc(50% - min(68vw, 1000px, 100cqh) * 0.38);
-  left: clamp(48px, 5vw, 80px);
+  --bird-anchor-width: calc(var(--bird-life-width, min(82vw, 820px)) * 0.2);
+  --seed-size: min(68vw, 1000px, 100cqh);
+  --seed-overhang: 9vw;
+  --seed-left: calc(100% + var(--seed-overhang) - var(--seed-size));
+  --seed-top: calc(50% - var(--seed-size) / 2);
+  left: calc(var(--seed-left) + var(--seed-size) * 0.12 - var(--bird-anchor-width));
+  top: calc(var(--seed-top) + var(--seed-size) * 0.25 - var(--bird-anchor-width) / 3);
 }
 
 @media (max-width: 900px) {
-  .cycle-bird { top: calc(50% - min(85vw, 100cqh) * 0.38); }
+  .cycle-bird {
+    --seed-size: min(85vw, 100cqh);
+    --seed-overhang: 25vw;
+  }
 }
 
 @media (max-width: 540px) {
   .cycle-bird {
-    top: calc(50% - min(100cqw, 100cqh) * 0.38);
-    left: 8%;
+    --seed-size: min(100cqw, 100cqh);
+    --seed-overhang: 0px;
+    left: calc(var(--seed-left) + var(--seed-size) * 0.17 - var(--bird-anchor-width) / 2);
+    top: calc(var(--seed-top) + var(--seed-size) * 0.08 - var(--bird-anchor-width) / 3);
   }
 }

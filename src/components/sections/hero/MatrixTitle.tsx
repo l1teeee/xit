@@ -115,8 +115,8 @@ export function MatrixTitle({ id, phrases, headingLevel = 1, soundHint = true, v
         />
         {soundHint && (
           <p aria-hidden="true" className={cn('sound-hint', soundLocked && 'is-visible')}>
-            <span className="sound-hint-key">press any key for sound</span>
-            <span className="sound-hint-tap">tap for sound</span>
+            <span className="sound-hint-key">press any key to hear it grow</span>
+            <span className="sound-hint-tap">tap to hear it grow</span>
           </p>
         )}
       </div>

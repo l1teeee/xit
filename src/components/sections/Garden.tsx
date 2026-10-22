@@ -7,6 +7,7 @@ import { MatrixTitle } from './hero/MatrixTitle';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { watchActivity } from '@/lib/typewriter/watchActivity';
 import { GardenPainter } from './garden/GardenPainter';
+import { GardenSky } from './garden/GardenSky';
 import './garden/garden.css';
 
 type PointerStart = { x: number; y: number; id: number };
@@ -79,6 +80,7 @@ export function Garden() {
 
   return (
     <section id="garden" data-scene data-scene-ground="#000000" aria-labelledby="garden-title" className="garden-section">
+      <GardenSky />
       <div className="garden-header">
         <MatrixTitle id="garden-title" phrases={garden.phrases} headingLevel={2} soundHint={false} variant="section" />
       </div>

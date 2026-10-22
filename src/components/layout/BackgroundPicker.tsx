@@ -1,12 +1,12 @@
 'use client';
 
-import { BACKGROUND_STYLES, useBackgroundStyle } from './BackgroundStyle';
+import { BACKGROUND_STYLES, BACKGROUND_STYLE_LABELS, useBackgroundStyle } from './BackgroundStyle';
 
 export function BackgroundPicker() {
   const { backgroundStyle, setBackgroundStyle } = useBackgroundStyle();
 
   return (
-    <div role="radiogroup" aria-label="Background style" className="background-picker">
+    <div role="radiogroup" aria-label="Garden texture" className="background-picker">
       {BACKGROUND_STYLES.map(style => (
         <label key={style} className="background-picker-option">
           <input
@@ -16,7 +16,7 @@ export function BackgroundPicker() {
             checked={backgroundStyle === style}
             onChange={() => setBackgroundStyle(style)}
           />
-          <span>{style}</span>
+          <span>{BACKGROUND_STYLE_LABELS[style]}</span>
         </label>
       ))}
     </div>

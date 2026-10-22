@@ -14,6 +14,7 @@ registerHooks({
 });
 
 const { GardenPainter } = await import('../src/components/sections/garden/GardenPainter.ts');
+const { GardenSkyPainter } = await import('../src/components/sections/garden/gardenSkyPainter.ts');
 const { AsciiSurface, loadAsciiSurfaceFont } = await import('../src/lib/ascii/asciiSurface.ts');
 
 const scheduled = new Map();
@@ -182,4 +183,30 @@ for (const [width, limit, ratio] of [[390, 24, 1.25], [1440, 48, 1.75]]) {
   painter.dispose();
 }
 
-process.stdout.write('PASS: ASCII density, polarity, atlas reuse, font loading, bounded planting, DPR, one loop, pause/resume, reduced motion and teardown.\n');
+const skyLayout = { fieldTop: 130, soilTop: 700, titleRight: 408, titleBottom: 130 };
+const skyView = surface(1440, 900);
+const skyPainter = new GardenSkyPainter(skyView.canvas, family, true, () => skyLayout);
+const skyDensity = offscreen.at(-2);
+assert.equal(scheduled.size, 0, 'offscreen sky construction must not start a loop');
+assert.ok(skyDensity.commands().some(command => command[0] === 'arc'), 'the sky paints the moon on construction');
+skyPainter.setActive(true);
+skyPainter.setActive(true);
+assert.equal(scheduled.size, 1, 'repeated sky activation must keep one loop');
+nextFrame(1000);
+const firstSkyFrame = skyDensity.snapshot();
+nextFrame(1016);
+assert.equal(skyDensity.snapshot(), firstSkyFrame, 'the sky repaints at most about 20 times a second');
+assert.equal(scheduled.size, 1, 'a skipped sky frame keeps the loop alive');
+nextFrame(1060);
+assert.notEqual(skyDensity.snapshot(), firstSkyFrame, 'the sky twinkles and drifts between painted frames');
+skyPainter.setActive(false);
+assert.equal(scheduled.size, 0, 'a sky out of view cancels its frame');
+skyPainter.setAnimated(false);
+skyPainter.setActive(true);
+assert.equal(scheduled.size, 0, 'a still sky never starts a loop');
+skyPainter.resize();
+assert.equal(scheduled.size, 0, 'resizing a still sky stays still');
+skyPainter.dispose();
+assert.equal(skyView.canvas.width, 0, 'sky teardown releases the visible canvas');
+
+process.stdout.write('PASS: ASCII density, polarity, atlas reuse, font loading, bounded planting, DPR, one loop, pause/resume, reduced motion, teardown and the 20 fps sky.\n');

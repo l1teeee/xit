@@ -17,6 +17,11 @@
     background: var(--color-bg);
     color: var(--color-ink);
   }
+  html {
+    scrollbar-width: none;
+    overscroll-behavior-y: none;
+  }
+  html::-webkit-scrollbar { display: none; }
   body { min-height: 100vh; isolation: isolate; }
   ::selection { color: var(--color-white); background: var(--color-black); }
   :focus-visible { outline: 2px solid var(--color-signal); outline-offset: 3px; }

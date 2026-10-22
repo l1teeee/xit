@@ -24,6 +24,10 @@ const speckleRadius = 0.05;
 const speckleCount = 7;
 const goldenAngle = 2.39996;
 
+const cellWidth = 8;
+const cellHeight = 14;
+const groundRatio = 0.85;
+
 type Speckle = { x: number; y: number; color: string };
 
 const centerSpeckles: Speckle[] = Array.from({ length: speckleCount }, (_, index) => {
@@ -49,9 +53,94 @@ function petalGradientFor(ctx: CanvasRenderingContext2D): CanvasGradient {
   return gradient;
 }
 
-function seeded(index: number, salt: number): number {
+export function seeded(index: number, salt: number): number {
   const value = Math.sin(index * 127.1 + salt * 311.7) * 43758.5453;
   return value - Math.floor(value);
+}
+
+// The soil is laid out in whole ASCII cells: each cell becomes one glyph, so a tone only reads
+// if it fills a cell. At the surface's gamma of 0.55 the pit tone prints ":", the base tone "-"
+// and the stone tone "+".
+const soilBaseColor = '#2b2b2b';
+const soilPitColor = '#202020';
+const soilStoneColor = '#4a4a4a';
+
+const soilEdgeGapChance = 0.28;
+const soilEdgeBumpChance = 0.12;
+const soilPitChance = 0.06;
+const soilClodChance = 0.04;
+const soilPebbleChance = 0.03;
+
+const soilEdgeGapSalt = 21;
+const soilEdgeBumpSalt = 22;
+const soilBodySalt = 23;
+const soilRowStride = 4096;
+
+type SoilPatch = { x: number; y: number; width: number; color: string };
+// The soil spans whole cells, past the canvas edge when it ends mid-cell, so the last row and column keep their full tone.
+type Soil = { top: number; width: number; height: number; patches: SoilPatch[] };
+
+const noSoil: Soil = { top: 0, width: 0, height: 0, patches: [] };
+
+// The first soil row starts at or above the ground line, so every stem root is buried in it.
+export function soilTopFor(fieldHeight: number): number {
+  return Math.floor(fieldHeight * groundRatio / cellHeight) * cellHeight;
+}
+
+function soilNoise(column: number, row: number, salt: number): number {
+  return seeded(row * soilRowStride + column, salt);
+}
+
+function buildSoilEdge(columns: number, edgeRow: number): SoilPatch[] {
+  const top = edgeRow * cellHeight;
+  const patches: SoilPatch[] = [{ x: 0, y: top, width: columns * cellWidth, color: soilStoneColor }];
+  for (let column = 0; column < columns; column += 1) {
+    const x = column * cellWidth;
+    if (soilNoise(column, edgeRow, soilEdgeGapSalt) < soilEdgeGapChance) {
+      patches.push({ x, y: top, width: cellWidth, color: soilBaseColor });
+    }
+    if (soilNoise(column, edgeRow, soilEdgeBumpSalt) < soilEdgeBumpChance) {
+      patches.push({ x, y: top - cellHeight, width: cellWidth, color: soilBaseColor });
+    }
+  }
+  return patches;
+}
+
+function buildSoilBody(columns: number, firstRow: number, rows: number): SoilPatch[] {
+  const patches: SoilPatch[] = [];
+  for (let row = firstRow; row < rows; row += 1) {
+    for (let column = 0; column < columns; column += 1) {
+      const roll = soilNoise(column, row, soilBodySalt);
+      const x = column * cellWidth;
+      const y = row * cellHeight;
+      if (roll < soilPitChance) {
+        patches.push({ x, y, width: cellWidth, color: soilPitColor });
+      } else if (roll > 1 - soilPebbleChance) {
+        patches.push({ x, y, width: cellWidth, color: soilStoneColor });
+      } else if (roll > 1 - soilPebbleChance - soilClodChance) {
+        patches.push({ x, y, width: cellWidth * 2, color: soilStoneColor });
+      }
+    }
+  }
+  return patches;
+}
+
+function buildSoil(width: number, height: number): Soil {
+  const columns = Math.ceil(width / cellWidth);
+  const rows = Math.ceil(height / cellHeight);
+  const edgeRow = soilTopFor(height) / cellHeight;
+  const patches = [...buildSoilEdge(columns, edgeRow), ...buildSoilBody(columns, edgeRow + 1, rows)];
+  const top = edgeRow * cellHeight;
+  return { top, width: columns * cellWidth, height: rows * cellHeight - top, patches };
+}
+
+function drawSoil(ctx: CanvasRenderingContext2D, soil: Soil): void {
+  ctx.fillStyle = soilBaseColor;
+  ctx.fillRect(0, soil.top, soil.width, soil.height);
+  for (const patch of soil.patches) {
+    ctx.fillStyle = patch.color;
+    ctx.fillRect(patch.x, patch.y, patch.width, cellHeight);
+  }
 }
 
 function makePlant(index: number, count: number): Plant {
@@ -142,7 +231,7 @@ function drawFlower(ctx: CanvasRenderingContext2D, x: number, y: number, radius:
 }
 
 function drawPlant(ctx: CanvasRenderingContext2D, plant: Plant, width: number, height: number, time: number, animate: boolean): void {
-  const ground = height * 0.85;
+  const ground = height * groundRatio;
   const fullStemHeight = height * plant.height;
   const growth = plant.plantedAt < 0 ? 1 : Math.min(1, (time - plant.plantedAt) / 850);
   const stemHeight = fullStemHeight * growth;
@@ -197,6 +286,7 @@ export class GardenPainter {
   private canvas: HTMLCanvasElement;
   private surface: AsciiSurface;
   private plants: Plant[] = [];
+  private soil = noSoil;
   private width = 0;
   private height = 0;
   private active = false;
@@ -213,6 +303,8 @@ export class GardenPainter {
       ink: '#ffffff',
       gamma: 0.55,
       dprCap: canvas.clientWidth < 600 ? 1.25 : 1.75,
+      cellWidth,
+      cellHeight,
     }, fontFamily);
     this.animated = animated;
     this.resize();
@@ -225,6 +317,7 @@ export class GardenPainter {
     this.surface.resize();
     this.width = width;
     this.height = height;
+    this.soil = buildSoil(width, height);
     const count = width < 600 ? 8 : width < 900 ? 11 : 16;
     if (this.plants.length === 0) {
       this.plants = Array.from({ length: count }, (_, index) => makePlant(index, count));
@@ -238,7 +331,7 @@ export class GardenPainter {
     const index = this.nextSeed;
     this.nextSeed += 1;
     const normalizedX = Math.min(0.97, Math.max(0.03, x / this.width));
-    const normalizedHeight = Math.min(0.73, Math.max(0.17, 0.85 - y / this.height));
+    const normalizedHeight = Math.min(0.73, Math.max(0.17, groundRatio - y / this.height));
     this.plants.push({
       x: normalizedX,
       height: normalizedHeight,
@@ -295,6 +388,7 @@ export class GardenPainter {
 
   private draw(time: number): void {
     const context = this.surface.beginFrame();
+    drawSoil(context, this.soil);
     for (const plant of this.plants) {
       drawPlant(context, plant, this.width, this.height, time, this.animated);
     }

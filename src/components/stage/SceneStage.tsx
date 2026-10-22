@@ -35,19 +35,7 @@ export function SceneStage({ children }: { children: ReactNode }) {
       });
     }
 
-    function followAnchor(event: MouseEvent) {
-      if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-      if (!(event.target instanceof Element)) return;
-      const anchor = event.target.closest<HTMLAnchorElement>('a[href^="#"]');
-      if (!anchor || anchor.target || anchor.hasAttribute('download')) return;
-      if (!SCENE_IDS.some(id => anchor.hash === `#${id}`)) return;
-      event.preventDefault();
-      if (window.location.hash !== anchor.hash) window.history.pushState(window.history.state, '', anchor.hash);
-      scrollToHash(true);
-    }
-
     function followHash() { scrollToHash(true); }
-    stage.addEventListener('click', followAnchor);
     window.addEventListener('hashchange', followHash);
     const layoutObserver = new ResizeObserver(() => ScrollTrigger.refresh());
     layoutObserver.observe(stage.querySelector('.garden-header')!);
@@ -62,7 +50,6 @@ export function SceneStage({ children }: { children: ReactNode }) {
 
     return () => {
       mounted = false;
-      stage.removeEventListener('click', followAnchor);
       window.removeEventListener('hashchange', followHash);
       layoutObserver.disconnect();
       controller.dispose();

@@ -1,0 +1,56 @@
+.scene-indicator {
+  --mark-current: #000000;
+  --mark-other: #a8a8a8;
+  position: fixed;
+  z-index: 20;
+  top: 50%;
+  right: max(18px, env(safe-area-inset-right));
+  transform: translateY(-50%);
+  display: grid;
+  pointer-events: none;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 16px;
+}
+
+.scene-indicator[data-ground="dark"] {
+  --mark-current: #ffffff;
+  --mark-other: #6e6e6e;
+}
+
+/* The dash and the dot sit in the same cell and cross-fade, since a text glyph cannot transition into another. */
+.scene-indicator-mark {
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  color: var(--mark-other);
+  transition: color 500ms ease;
+}
+
+.scene-indicator-mark::before,
+.scene-indicator-mark::after {
+  grid-area: 1 / 1;
+  transition: opacity 500ms ease;
+}
+
+.scene-indicator-mark::before {
+  content: "\00b7";
+  opacity: 1;
+}
+
+.scene-indicator-mark::after {
+  content: "\2014";
+  opacity: 0;
+}
+
+.scene-indicator-mark[data-current="true"] { color: var(--mark-current); }
+.scene-indicator-mark[data-current="true"]::before { opacity: 0; }
+.scene-indicator-mark[data-current="true"]::after { opacity: 1; }
+
+@media (max-width: 540px) {
+  .scene-indicator {
+    right: max(10px, env(safe-area-inset-right));
+    font-size: 9px;
+  }
+}

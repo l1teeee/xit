@@ -5,6 +5,15 @@ import { createContext, useContext, useState, type ReactNode } from 'react';
 export const BACKGROUND_STYLES = ['ascii', 'dots', 'halftone', 'dither', 'lines', 'hybrid'] as const;
 export type BackgroundStyle = typeof BACKGROUND_STYLES[number];
 
+export const BACKGROUND_STYLE_LABELS: Record<BackgroundStyle, string> = {
+  ascii: 'roots',
+  dots: 'pollen',
+  halftone: 'petals',
+  dither: 'moss',
+  lines: 'rain',
+  hybrid: 'wild',
+};
+
 interface BackgroundStyleContextValue {
   backgroundStyle: BackgroundStyle;
   setBackgroundStyle: (style: BackgroundStyle) => void;

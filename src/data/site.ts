@@ -2,15 +2,15 @@ import type { HeroCopy, SectionTitleCopy, Site } from './types';
 
 export const site: Site = {
   name: 'AACII',
-  description: 'AACII is an independent studio for generative graphics, interactive systems and realtime visuals.',
+  description: 'A digital garden written in ASCII: a hummingbird made of letters, flowers that sway in the wind, and a field you can plant.',
 };
 
 export const life: SectionTitleCopy = {
-  phrases: [{ lines: ['Life is not natural.', 'It is digital.'] }],
+  phrases: [{ lines: ['A hummingbird', 'made of letters.'] }],
 };
 
 export const garden: SectionTitleCopy = {
-  phrases: [{ lines: ['A little input.', 'A living world.'] }],
+  phrases: [{ lines: ['Touch the soil.', 'Watch it bloom.'] }],
 };
 
 export const cycle: SectionTitleCopy = {
@@ -19,9 +19,9 @@ export const cycle: SectionTitleCopy = {
 
 export const hero: HeroCopy = {
   phrases: [
-    { lines: ['SYSTEMS', 'IN MOTION.'] },
-    { lines: ['SIGNAL', 'AND NOISE.'] },
-    { lines: ['STRUCTURE', 'IN FLUX.'] },
-    { lines: ['SHAPES', 'THAT BREATHE.'] },
+    { lines: ['GROWN', 'IN CODE.'] },
+    { lines: ['GARDENS', 'OF TEXT.'] },
+    { lines: ['GRASS', 'THAT TYPES.'] },
+    { lines: ['GREEN,', 'IN GRAYSCALE.'] },
   ],
 };

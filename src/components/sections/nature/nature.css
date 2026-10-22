@@ -111,21 +111,7 @@
 .cycle-copy [data-matrix-title] { justify-items: start; }
 .nature-cycle .matrix-title { --title-width: min(610px, 43vw); }
 .cycle-overline { font: 11px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 28px; }
-.cycle-return {
-  display: inline-flex;
-  gap: 60px;
-  align-items: center;
-  min-height: 52px;
-  margin-top: 36px;
-  border-bottom: 1px solid #000000;
-  font: 12px var(--font-mono);
-}
-.cycle-return span { font-size: 24px; }
 .nature-cycle :focus-visible { outline-color: #000000; }
-
-@media (hover: hover) and (pointer: fine) {
-  .cycle-return:hover { color: #6e6e6e; border-color: #6e6e6e; }
-}
 
 @media (max-width: 900px) {
   .habitat-artwork { opacity: .9; }
@@ -140,7 +126,6 @@
   .cycle-copy { width: 100%; padding: 4svh 24px 0; }
   .nature-cycle .matrix-title { --title-width: min(610px, 80vw); }
   .cycle-overline { font-size: 9px; margin-bottom: 3svh; }
-  .cycle-return { margin-top: 3svh; }
   .nature-cycle .habitat-motion { height: auto; width: 100%; }
   .seed-head { width: min(100cqw, 100cqh); right: 0; }
 }

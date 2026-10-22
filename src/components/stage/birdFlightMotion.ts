@@ -9,7 +9,9 @@ export function createBirdFlightMotion(bird: HTMLElement, hover: HTMLElement) {
   gsap.set(bird, { xPercent: -50, yPercent: -50, transformOrigin: '50% 50%' });
   const setX = gsap.quickSetter(bird, 'x', 'px');
   const setY = gsap.quickSetter(bird, 'y', 'px');
-  const setScale = gsap.quickSetter(bird, 'scale');
+  // quickSetter ignores the 'scale' shorthand (GSAP 3.15), so each axis is set on its own.
+  const setScaleX = gsap.quickSetter(bird, 'scaleX');
+  const setScaleY = gsap.quickSetter(bird, 'scaleY');
   const setOpacity = gsap.quickSetter(bird, 'opacity');
   const setFacing = gsap.quickSetter(hover, 'scaleX');
   let facing = 1;
@@ -20,7 +22,8 @@ export function createBirdFlightMotion(bird: HTMLElement, hover: HTMLElement) {
   function place(x: number, y: number, scale: number, opacity: number, nextFacing: number) {
     setX(x);
     setY(y);
-    setScale(scale);
+    setScaleX(scale);
+    setScaleY(scale);
     setOpacity(opacity);
     setFacing(nextFacing);
     facing = nextFacing;
@@ -58,7 +61,7 @@ export function createBirdFlightMotion(bird: HTMLElement, hover: HTMLElement) {
       place(
         from.x + (to.x - from.x) * eased,
         from.y + (to.y - from.y) * eased - height * 0.04 * arc,
-        (from.scale + (to.scale - from.scale) * eased) * (1 + 0.3 * arc),
+        (from.scale + (to.scale - from.scale) * eased) * (1 + 0.12 * arc),
         from.opacity + (to.opacity - from.opacity) * eased,
         nextFacing,
       );

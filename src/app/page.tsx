@@ -1,4 +1,5 @@
 import { BackgroundStyleProvider } from '@/components/layout/BackgroundStyle';
+import { SceneIndicator } from '@/components/layout/SceneIndicator';
 import { SiteBackground } from '@/components/layout/SiteBackground';
 import { Hero } from '@/components/sections/Hero';
 import { Life } from '@/components/sections/Life';
@@ -18,6 +19,7 @@ export default function Home() {
           <Cycle />
         </SceneStage>
       </main>
+      <SceneIndicator />
     </BackgroundStyleProvider>
   );
 }

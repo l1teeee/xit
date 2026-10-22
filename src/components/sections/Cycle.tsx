@@ -11,9 +11,8 @@ export function Cycle() {
         <div className="cycle-bird" data-bird-anchor data-bird-facing="right" aria-hidden="true" />
       </HabitatMotion>
       <div className="cycle-copy">
-        <p className="cycle-overline">From a bit. To a bloom.</p>
+        <p className="cycle-overline">From seed to bloom.</p>
         <MatrixTitle id="cycle-title" phrases={cycle.phrases} headingLevel={2} soundHint={false} variant="section" />
-        <a className="cycle-return" href="#index">Begin again <span aria-hidden="true">+</span></a>
       </div>
     </section>
   );
