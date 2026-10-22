@@ -5,7 +5,7 @@
   --color-black: #000000;
   --color-white: #ffffff;
   --color-ink: #000000;
-  --color-signal: #0a47f5;
+  --color-signal: #000000;
   --font-sans: ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-jetbrains-mono), monospace;
   --text-micro: 0.6875rem;
@@ -27,8 +27,9 @@
   --picker-height: 44px;
 }
 
+/* Absolute, not fixed: the picker belongs to the hero and scrolls away with it. */
 .background-picker {
-  position: fixed;
+  position: absolute;
   z-index: 10;
   right: calc(16px + env(safe-area-inset-right, 0px));
   bottom: max(12px, env(safe-area-inset-bottom));

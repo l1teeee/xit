@@ -73,9 +73,69 @@
   }
 }
 
+/*
+  The section files (nature.css, garden.css) set --title-width with the same specificity and load after this
+  file, so a smaller --title-width here would never apply. The section titles keep their own width and height
+  limits and are scaled to 60 percent through the font size instead.
+*/
+.matrix-title.matrix-title--section {
+  --title-scale: 0.6;
+  --title-width: min(560px, 84vw);
+  --title-max-height: calc(var(--viewport-height) * 0.22);
+  font-size: max(
+    calc(var(--min-glyph-height) / var(--cap-em)),
+    calc(
+      var(--title-scale) * min(
+        calc(var(--title-width) / var(--title-em)),
+        calc(var(--title-max-height) / var(--block-em))
+      )
+    )
+  );
+}
+
 .matrix-text {
   display: flex;
   flex-direction: column;
+}
+
+/* A quiet line under the title that fades in a moment after load and goes at the first key, click or tap. */
+.sound-hint {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-top: 1.5rem;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  line-height: var(--text-micro--line-height);
+  letter-spacing: 0.08em;
+  color: #8a8a8a;
+  text-shadow: 0 0 2px #fff, 0 0 4px #fff, 0 0 6px #fff;
+  opacity: 0;
+  transition: opacity 300ms ease-out;
+  pointer-events: none;
+  user-select: none;
+}
+
+.sound-hint.is-visible {
+  opacity: 1;
+  transition: opacity 600ms ease-out 1200ms;
+}
+
+.sound-hint-tap {
+  display: none;
+}
+
+/* A touch screen has no keys to press. */
+@media (hover: none) and (pointer: coarse) {
+  .sound-hint-key {
+    display: none;
+  }
+
+  .sound-hint-tap {
+    display: inline;
+  }
 }
 
 /* A glitch cut: a copy of the text clipped to one band, with a copy in hexadecimal digits fading in over it. */

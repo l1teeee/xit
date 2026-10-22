@@ -1,7 +1,7 @@
 'use client';
 
 import { Fragment, useEffect, useRef, useState } from 'react';
-import type { HeroPhrase } from '@/data/types';
+import type { TitlePhrase } from '@/data/types';
 import { cn } from '@/lib/cn';
 import { createKeySound } from '@/lib/typewriter/keySound';
 import { watchActivity } from '@/lib/typewriter/watchActivity';
@@ -14,7 +14,7 @@ type TitleStatus = 'pending' | 'ready' | 'fallback';
 
 interface AsciiTitleProps {
   id: string;
-  phrases: HeroPhrase[];
+  phrases: TitlePhrase[];
 }
 
 const RESIZE_DEBOUNCE_MS = 150;

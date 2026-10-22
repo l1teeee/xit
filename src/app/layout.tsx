@@ -31,8 +31,8 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${jetBrainsMono.variable} ${vt323.variable} overflow-hidden`}>
-      <body className="h-dvh min-h-0 overflow-hidden bg-bg text-ink font-sans antialiased">
+    <html lang="en" className={`${jetBrainsMono.variable} ${vt323.variable}`}>
+      <body className="bg-bg text-ink font-sans antialiased">
         {children}
       </body>
     </html>

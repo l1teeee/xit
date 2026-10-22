@@ -1,0 +1,146 @@
+.nature-habitat,
+.nature-cycle {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  height: 100svh;
+  min-height: 0;
+  overflow: clip;
+  background: #ffffff;
+  color: #000000;
+  font-family: var(--font-mono);
+}
+
+.nature-habitat {
+  flex-direction: column;
+  align-items: center;
+  padding-block: 4svh;
+}
+
+.habitat-motion {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.habitat-artwork { width: 100%; height: 100%; }
+
+.habitat-specimen {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  container-type: size;
+}
+
+.habitat-bird {
+  width: min(82vw, 820px, 150cqh);
+  max-width: 100%;
+  max-height: 100%;
+  aspect-ratio: 51 / 34;
+}
+
+.habitat-specimen-note {
+  position: absolute;
+  right: 16%;
+  bottom: 6%;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: #6e6e6e;
+  letter-spacing: .06em;
+}
+
+.habitat-statement {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  flex: none;
+  place-items: center;
+  padding: 3svh 20px;
+}
+
+.nature-habitat .matrix-title,
+.nature-cycle .matrix-title {
+  text-shadow: none;
+  color: #000000;
+  --title-width: min(610px, 80vw);
+}
+
+.nature-habitat .matrix-cell.is-cursor::after,
+.nature-cycle .matrix-cell.is-cursor::after {
+  background: #000000;
+  box-shadow: none;
+}
+
+.nature-cycle { align-items: center; }
+.nature-cycle .habitat-motion {
+  position: relative;
+  inset: auto;
+  order: 2;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  container-type: size;
+}
+
+.seed-head {
+  position: absolute;
+  width: min(68vw, 1000px, 100cqh);
+  height: auto;
+  max-height: 100%;
+  aspect-ratio: 1;
+  top: 50%;
+  right: -9vw;
+  transform: translateY(-50%);
+}
+
+.cycle-copy {
+  position: relative;
+  order: 1;
+  flex: none;
+  width: 52%;
+  min-height: 0;
+  padding: 4svh 0 4svh clamp(24px, 6vw, 100px);
+}
+
+.cycle-copy [data-matrix-title] { justify-items: start; }
+.nature-cycle .matrix-title { --title-width: min(610px, 43vw); }
+.cycle-overline { font: 11px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 28px; }
+.cycle-return {
+  display: inline-flex;
+  gap: 60px;
+  align-items: center;
+  min-height: 52px;
+  margin-top: 36px;
+  border-bottom: 1px solid #000000;
+  font: 12px var(--font-mono);
+}
+.cycle-return span { font-size: 24px; }
+.nature-cycle :focus-visible { outline-color: #000000; }
+
+@media (hover: hover) and (pointer: fine) {
+  .cycle-return:hover { color: #6e6e6e; border-color: #6e6e6e; }
+}
+
+@media (max-width: 900px) {
+  .habitat-artwork { opacity: .9; }
+  .seed-head { width: min(85vw, 100cqh); right: -25vw; }
+}
+
+@media (max-width: 540px) {
+  .habitat-artwork { position: absolute; width: 936px; height: 585px; max-width: none; left: calc(50% - 310px); top: -50px; }
+  .habitat-bird { width: min(96vw, 150cqh); }
+  .habitat-specimen-note { bottom: 0; right: 12%; font-size: 9px; }
+  .nature-cycle { flex-direction: column; align-items: stretch; }
+  .cycle-copy { width: 100%; padding: 4svh 24px 0; }
+  .nature-cycle .matrix-title { --title-width: min(610px, 80vw); }
+  .cycle-overline { font-size: 9px; margin-bottom: 3svh; }
+  .cycle-return { margin-top: 3svh; }
+  .nature-cycle .habitat-motion { height: auto; width: 100%; }
+  .seed-head { width: min(100cqw, 100cqh); right: 0; }
+}

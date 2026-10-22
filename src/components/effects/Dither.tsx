@@ -18,6 +18,7 @@ export interface DitherProps {
   colorNum?: number;
   pixelSize?: number;
   disableAnimation?: boolean;
+  fade?: number;
   enableMouseInteraction?: boolean;
   mouseRadius?: number;
   ditherMode?: DitherMode;
@@ -44,6 +45,7 @@ type Settings = {
   colorNum: number;
   pixelSize: number;
   disableAnimation: boolean;
+  fade: number;
   enableMouseInteraction: boolean;
   mouseRadius: number;
   mode: number;
@@ -225,6 +227,7 @@ uniform vec3 uBackground;
 uniform vec3 uPalette[${MAX_PALETTE}];
 uniform int uPaletteCount;
 uniform float uTransparent;
+uniform float uFade;
 out vec4 outColor;
 
 const float bayer8[64] = float[64](
@@ -279,6 +282,24 @@ vec3 toSrgb(vec3 c) {
   return mix(c * 12.92, 1.055 * pow(c, vec3(1.0 / 2.4)) - 0.055, step(0.0031308, c));
 }
 
+float cellHash(vec2 cell) {
+  uvec2 q = uvec2(ivec2(cell)) * uvec2(1597334673u, 3812015801u);
+  uint n = (q.x ^ q.y) * 1597334673u;
+  return float(n >> 8u) * (1.0 / 16777216.0);
+}
+
+// Cells drop out in scattered white-noise order so the dissolve is even with no visible pattern,
+// instead of the field thinning down to its peaks.
+bool dissolved(vec2 cell) {
+  return cellHash(cell) < uFade;
+}
+
+vec4 emptyColor() {
+  if (uPaletteCount > 1) return vec4(toSrgb(uPalette[0]), 1.0);
+  if (uTransparent > 0.5) return vec4(0.0);
+  return vec4(toSrgb(uBackground), 1.0);
+}
+
 float fieldAt(vec2 cell) {
   vec4 value = texelFetch(uField, clamp(ivec2(cell), ivec2(0), uFieldSize - 1), 0);
   return value.r + value.g / 255.0;
@@ -324,6 +345,7 @@ vec4 screenColor(int mode) {
       ink = mix(ink, lines, smoothstep(0.4, 0.7, density));
     }
   }
+  if (dissolved(floor(screen / pitch))) ink = 0.0;
   float strength = mix(0.35, 0.85, density);
   if (mode == 8) strength *= 1.0 - 0.25 * smoothstep(0.7, 1.0, density);
   vec3 color = toSrgb(uWave);
@@ -336,6 +358,7 @@ vec4 screenColor(int mode) {
 vec4 renderMode(int mode) {
   if (mode == 3 || mode >= 8) return screenColor(mode);
   vec2 cell = floor(gl_FragCoord.xy / uCellDevice);
+  if (dissolved(cell)) return emptyColor();
   vec4 sampleValue = texelFetch(uField, clamp(ivec2(cell), ivec2(0), uFieldSize - 1), 0);
   float f = sampleValue.r + sampleValue.g / 255.0;
   float t = threshold(cell, mode) - 0.25;
@@ -432,6 +455,7 @@ export const Dither = ({
   colorNum = 4,
   pixelSize = 2,
   disableAnimation = false,
+  fade = 0,
   enableMouseInteraction = true,
   mouseRadius = 1,
   ditherMode = 'bayer',
@@ -459,6 +483,7 @@ export const Dither = ({
     colorNum: Math.max(2, colorNum),
     pixelSize: Math.max(1, pixelSize),
     disableAnimation,
+    fade: clamp(fade, 0, 1),
     enableMouseInteraction,
     mouseRadius: Math.max(0.001, mouseRadius),
     mode: MODES[ditherMode] ?? 0,
@@ -655,6 +680,7 @@ export const Dither = ({
       const transparent = s.backgroundColor === 'transparent';
       gl.uniform3fv(d.uBackground, transparent ? [0, 0, 0] : toColor(s.backgroundColor));
       gl.uniform1f(d.uTransparent, transparent ? 1 : 0);
+      gl.uniform1f(d.uFade, s.fade);
       s.palette.forEach((value, index) => paletteData.set(toColor(value), index * 3));
       gl.uniform3fv(d.uPalette, paletteData);
       gl.uniform1i(d.uPaletteCount, s.palette.length);

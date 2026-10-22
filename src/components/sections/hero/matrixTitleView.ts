@@ -1,4 +1,4 @@
-import type { HeroPhrase } from '@/data/types';
+import type { TitlePhrase } from '@/data/types';
 import type { TypewriterFrame } from '@/lib/typewriter/typewriterLoop';
 import { hexDigitAt } from './hexDecode';
 import { bandClipPath, bandShiftTransform, gapClipPath, type CutBand, type CutSurface } from './matrixTitleCuts';
@@ -91,7 +91,7 @@ function buildLine(
 
 // Every character of the phrase's final text gets its own cell from the start, so the lines keep
 // their centered position while they fill in. The keys follow the keystrokes of the typewriter loop.
-function buildPhraseLayout(phrase: HeroPhrase): PhraseLayout {
+function buildPhraseLayout(phrase: TitlePhrase): PhraseLayout {
   const text = document.createElement('div');
   text.className = 'matrix-text';
   const runs: HTMLElement[] = [];
@@ -220,7 +220,7 @@ function syncCutLayer(layer: CutLayer, layout: PhraseLayout, band: CutBand): voi
 // while typing: the lines are centered by CSS, and only a phrase change measures anything.
 export class MatrixTitleView implements CutSurface {
   private readonly host: HTMLElement;
-  private readonly phrases: readonly HeroPhrase[];
+  private readonly phrases: readonly TitlePhrase[];
   private readonly animated: boolean;
   private phraseIndex = -1;
   private layout: PhraseLayout | null = null;
@@ -229,7 +229,7 @@ export class MatrixTitleView implements CutSurface {
   // Bands that were on screen when the phrase changed. Their layers are gone, so they are never drawn again.
   private readonly droppedBands = new Set<CutBand>();
 
-  constructor(host: HTMLElement, phrases: readonly HeroPhrase[], animated: boolean) {
+  constructor(host: HTMLElement, phrases: readonly TitlePhrase[], animated: boolean) {
     this.host = host;
     this.phrases = phrases;
     this.animated = animated;

@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react';
-import type { HeroPhrase } from '@/data/types';
+import type { TitlePhrase } from '@/data/types';
 
 // The title geometry in em, the single source for the CSS and for the code that sizes the block.
 // advance, cap and ascent are VT323's own metrics (its descent is 0.2, so ascent plus descent is 1).
@@ -20,7 +20,7 @@ function lineWidthEm(line: string): number {
   return width;
 }
 
-function widestLineEm(phrases: readonly HeroPhrase[]): number {
+function widestLineEm(phrases: readonly TitlePhrase[]): number {
   const widths = phrases.flatMap(phrase => phrase.lines.map(lineWidthEm));
   return Math.max(...widths);
 }
@@ -31,7 +31,7 @@ export function titleBlockEm(lineCount: number): number {
 }
 
 // The custom properties MatrixTitle.css builds the title from.
-export function titleStyle(phrases: readonly HeroPhrase[]): CSSProperties {
+export function titleStyle(phrases: readonly TitlePhrase[]): CSSProperties {
   return {
     '--advance-em': ADVANCE_EM,
     '--tracking-em': TRACKING_EM,

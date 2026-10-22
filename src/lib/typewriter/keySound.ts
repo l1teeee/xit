@@ -158,16 +158,27 @@ function ignoreRefusedResume(): undefined {
   return undefined;
 }
 
-export function createKeySound(): KeySound {
+// onLockChange(true) means the sound waits for its first gesture. onLockChange(false) is called once, when it is
+// playing or when it never will, so a hint to press a key can go away. It is never called without Web Audio.
+export function createKeySound(onLockChange?: (locked: boolean) => void): KeySound {
   let graph: AudioGraph | null = null;
+  let unlockReported = false;
 
   function resumeIfNotRunning(): void {
     if (!graph || graph.context.state === 'running' || graph.context.state === 'closed') return;
     graph.context.resume().catch(ignoreRefusedResume);
   }
 
+  function reportUnlocked(): void {
+    if (unlockReported) return;
+    if (graph && graph.context.state !== 'running') return;
+    unlockReported = true;
+    onLockChange?.(false);
+  }
+
   function onStateChange(): void {
     resumeIfNotRunning();
+    reportUnlocked();
   }
 
   // The context is created inside a gesture so the browser starts it running and logs no autoplay warning.
@@ -179,6 +190,7 @@ export function createKeySound(): KeySound {
       graph?.context.addEventListener('statechange', onStateChange);
     }
     resumeIfNotRunning();
+    reportUnlocked();
   }
 
   function onVisibilityChange(): void {
@@ -187,6 +199,7 @@ export function createKeySound(): KeySound {
 
   UNLOCK_EVENTS.forEach(type => window.addEventListener(type, unlock, { capture: true, passive: true }));
   document.addEventListener('visibilitychange', onVisibilityChange);
+  if (typeof AudioContext !== 'undefined') onLockChange?.(true);
   // A page the user has already interacted with may start audio at once, without waiting for another gesture.
   if (navigator.userActivation?.hasBeenActive) unlock();
 

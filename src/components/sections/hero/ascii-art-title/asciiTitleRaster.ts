@@ -1,4 +1,4 @@
-import type { HeroPhrase } from '@/data/types';
+import type { TitlePhrase } from '@/data/types';
 import { phraseKeyKinds, type KeyKind } from '@/lib/typewriter/typewriterLoop';
 import { DISPLAY_FONT_WEIGHT, type AsciiTitleFonts } from './asciiTitleFonts';
 import { TONE_BLANK, classifyTones } from './asciiTitleTones';
@@ -108,7 +108,7 @@ function displayFont(sizePx: number, fonts: AsciiTitleFonts): string {
   return `${DISPLAY_FONT_WEIGHT} ${sizePx}px ${fonts.displayFamily}`;
 }
 
-function validatePhrases(phrases: readonly HeroPhrase[]): void {
+function validatePhrases(phrases: readonly TitlePhrase[]): void {
   if (phrases.length === 0) throw new Error('The title needs at least one phrase');
 
   const lineCount = phrases[0].lines.length;
@@ -123,7 +123,7 @@ function validatePhrases(phrases: readonly HeroPhrase[]): void {
 
 function measureTitle(
   context: CanvasRenderingContext2D,
-  phrases: readonly HeroPhrase[],
+  phrases: readonly TitlePhrase[],
   fonts: AsciiTitleFonts,
 ): TitleMetrics {
   context.font = displayFont(MEASURE_FONT_PX, fonts);
@@ -325,7 +325,7 @@ function assignCellsToKeys(tones: Uint8Array, layout: TitleLayout, letters: Lett
 }
 
 function buildPhraseRaster(
-  phrase: HeroPhrase,
+  phrase: TitlePhrase,
   prefixWidths: number[][],
   fonts: AsciiTitleFonts,
   layout: TitleLayout,
@@ -364,7 +364,7 @@ function lockLeadingLetter(phrases: PhraseRaster[]): void {
 }
 
 export function createTitleRaster(
-  phrases: readonly HeroPhrase[],
+  phrases: readonly TitlePhrase[],
   fonts: AsciiTitleFonts,
   options: TitleRasterOptions,
 ): TitleRaster {
