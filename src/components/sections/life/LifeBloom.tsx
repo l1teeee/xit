@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { Dither, type DitherField } from '@/components/effects/Dither';
-import { useBackgroundStyle } from '@/components/layout/BackgroundStyle';
+import { SCENE_PALETTE } from '@/data/scenePalette';
 import { useQualityProfile } from '@/hooks/useQualityProfile';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { watchActivity } from '@/lib/typewriter/watchActivity';
@@ -22,7 +22,6 @@ const LIFE_BLOOM_FIELD: DitherField = { kind: 'bloom', layout: getBloomFieldLayo
 export function LifeBloom() {
   const fieldRef = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(false);
-  const { backgroundStyle } = useBackgroundStyle();
   const quality = useQualityProfile();
   const reducedMotion = useReducedMotion();
   const finePointer = useSyncExternalStore(subscribePointer, getFinePointer, getServerPointer);
@@ -37,13 +36,13 @@ export function LifeBloom() {
     <div ref={fieldRef} className="bloom-field" aria-hidden="true">
       <Dither
         field={LIFE_BLOOM_FIELD}
-        waveColor="#a8a8a8"
+        waveColor={SCENE_PALETTE.life.ink}
         backgroundColor="#ffffff"
         colorNum={4}
         waveSpeed={0.05}
         waveFrequency={3}
         waveAmplitude={0.3}
-        ditherMode={backgroundStyle}
+        ditherMode="ascii"
         pixelSize={quality.ditherPixel}
         dpr={quality.dprCap}
         disableAnimation={!active || reducedMotion}

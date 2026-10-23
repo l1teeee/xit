@@ -15,8 +15,8 @@
   /* A capital never gets shorter than this, which keeps VT323 readable on the smallest phones. */
   --min-glyph-height: 12.6px;
   --viewport-height: 100svh;
-  /* Equal clearance above and below keeps the block centered and off the background picker. */
-  --title-max-height: calc(var(--viewport-height) - 2 * (var(--picker-height) + 36px));
+  /* Equal clearance above and below keeps the block centered. */
+  --title-max-height: calc(var(--viewport-height) - 160px);
   --half-leading-em: calc((var(--line-em) - 1) / 2);
   --cap-top-em: calc(var(--half-leading-em) + var(--ascent-em) - var(--cap-em));
   --block-em: calc(var(--cap-em) + (var(--title-lines) - 1) * var(--line-em));

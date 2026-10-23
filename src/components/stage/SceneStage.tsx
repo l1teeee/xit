@@ -4,7 +4,6 @@ import { useRef, type ReactNode } from 'react';
 import { useGSAP, ScrollTrigger } from '@/lib/gsap';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useCoarsePointer } from '@/hooks/useCoarsePointer';
-import { BirdFlight } from './BirdFlight';
 import { buildStageTimeline } from './stageTimeline';
 import { SCENE_IDS } from './stageTiming';
 import './stage.css';
@@ -61,8 +60,8 @@ export function SceneStage({ children }: { children: ReactNode }) {
     <div ref={ref} className="scene-stage">
       <div className="scene-card">
         {children}
-        <BirdFlight />
       </div>
+      <div className="scene-frost" aria-hidden="true" />
     </div>
   );
 }

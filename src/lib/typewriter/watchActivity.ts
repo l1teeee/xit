@@ -8,7 +8,8 @@ export function watchActivity(target: Element, onChange: (active: boolean) => vo
   const report = (): void => {
     const sceneState = scene?.getAttribute('data-scene-state');
     const sceneVisible = !sceneState || sceneState === 'current';
-    const active = onScreen && !document.hidden && sceneVisible;
+    const siteLoaded = !document.documentElement.hasAttribute('data-site-loading');
+    const active = onScreen && !document.hidden && sceneVisible && siteLoaded;
     if (active === previousActive) return;
     previousActive = active;
     onChange(active);
@@ -23,12 +24,15 @@ export function watchActivity(target: Element, onChange: (active: boolean) => vo
   if (scene) {
     sceneObserver.observe(scene, { attributes: true, attributeFilter: ['data-scene-state'] });
   }
+  const loadingObserver = new MutationObserver(report);
+  loadingObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-site-loading'] });
   document.addEventListener('visibilitychange', report);
   report();
 
   return () => {
     observer.disconnect();
     sceneObserver.disconnect();
+    loadingObserver.disconnect();
     document.removeEventListener('visibilitychange', report);
   };
 }

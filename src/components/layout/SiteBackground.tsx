@@ -6,11 +6,10 @@ import { useCoarsePointer } from '@/hooks/useCoarsePointer';
 import { useQualityProfile } from '@/hooks/useQualityProfile';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useScrollFade } from '@/hooks/useScrollFade';
-import { useBackgroundStyle } from './BackgroundStyle';
 import { COARSE_MULTIPLIER, FIRST_TRANSITION } from '@/components/stage/stageTiming';
+import { SCENE_PALETTE } from '@/data/scenePalette';
 
 export function SiteBackground() {
-  const { backgroundStyle } = useBackgroundStyle();
   const quality = useQualityProfile();
   const reducedMotion = useReducedMotion();
   const coarsePointer = useCoarsePointer();
@@ -22,9 +21,9 @@ export function SiteBackground() {
   return (
     <div aria-hidden="true" className="pointer-events-none fixed top-0 left-0 -z-10 h-lvh w-full" style={{ opacity: 1 - fade }}>
       <Dither
-        waveColor="#a8a8a8"
+        waveColor={SCENE_PALETTE.index.ink}
         backgroundColor="#ffffff"
-        ditherMode={backgroundStyle}
+        ditherMode="ascii"
         colorNum={4}
         waveSpeed={0.05}
         waveFrequency={3}

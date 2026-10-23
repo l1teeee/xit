@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { JetBrains_Mono, VT323 } from 'next/font/google';
+import { SiteLoader } from '@/components/layout/SiteLoader';
 import { site } from '@/data/site';
 import { getSiteUrl } from '@/lib/siteUrl';
 import './globals.css';
@@ -7,6 +8,8 @@ import './globals.css';
 const jetBrainsMono = JetBrains_Mono({ subsets: ['latin'], variable: '--font-jetbrains-mono', display: 'swap' });
 const vt323 = VT323({ weight: '400', subsets: ['latin'], variable: '--font-vt323', display: 'swap' });
 const title = 'XIT';
+// Without JavaScript nothing removes the loader or the scroll lock, so the page opens as it is.
+const noscriptStyle = 'html[data-site-loading] { overflow: visible; } .site-loader { display: none; }';
 
 export const metadata: Metadata = {
   metadataBase: new URL(getSiteUrl()),
@@ -31,8 +34,12 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${jetBrainsMono.variable} ${vt323.variable}`}>
+    <html lang="en" className={`${jetBrainsMono.variable} ${vt323.variable}`} data-site-loading="">
       <body className="bg-bg text-ink font-sans antialiased">
+        <SiteLoader />
+        <noscript>
+          <style>{noscriptStyle}</style>
+        </noscript>
         {children}
       </body>
     </html>

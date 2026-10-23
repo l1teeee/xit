@@ -5,6 +5,7 @@ import { useEffect, useRef, type CSSProperties } from 'react';
 import { getPointer, retainPointer } from '@/lib/pointer';
 import { BLOOM_FIELD } from '@/shaders/chunks/bloomField';
 import { WATER_FIELD } from '@/shaders/chunks/waterField';
+import { VOID_FIELD } from '@/shaders/chunks/voidField';
 import './Dither.css';
 
 export type DitherColor = string | [number, number, number];
@@ -12,7 +13,8 @@ export type DitherMode = 'ascii' | 'dots' | 'dither' | 'hybrid' | 'bayer' | 'bay
 export type DitherMouseEffect = 'erase' | 'reveal' | 'ripple';
 export type DitherField =
   | { kind: 'bloom'; layout: (width: number, height: number) => Float32Array }
-  | { kind: 'water' };
+  | { kind: 'water' }
+  | { kind: 'void' };
 
 export interface DitherProps {
   field?: DitherField;
@@ -96,7 +98,7 @@ const INTRO_SECONDS = 1.8;
 const BLOOM_OPEN_SECONDS = 2.4;
 const RIPPLE_SECONDS = 3.2;
 // uFieldShape values: 0 is the hero's waves.
-const FIELD_SHAPES = { bloom: 1, water: 2 } as const;
+const FIELD_SHAPES = { bloom: 1, water: 2, void: 3 } as const;
 // Where the first drop of a water field falls, just below the centered title, so visitors find the water without text.
 const WATER_INTRO_DROP = { x: 0, y: -0.22 } as const;
 
@@ -191,6 +193,8 @@ ${BLOOM_FIELD}
 
 ${WATER_FIELD}
 
+${VOID_FIELD}
+
 // A falling drop: a front expands from the impact with a train of crests behind it. Returns -1..1.
 float dropWave(float dist, float age) {
   float life = clamp(age / ${RIPPLE_SECONDS.toFixed(2)}, 0.0, 1.0);
@@ -237,6 +241,7 @@ void main() {
   float f = pattern((uv + warp) / uScale);
   if (uFieldShape == 1) f = bloomField(uv + warp, f);
   if (uFieldShape == 2) f = waterField(uv + warp, f);
+  if (uFieldShape == 3) f = voidField(uv + warp, f);
   if (uEffect == 0) f -= 0.5 * touch * uStrength;
   if (uEffect == 1) f += 0.5 * touch * uStrength;
   f += ring * DROP_DENSITY;

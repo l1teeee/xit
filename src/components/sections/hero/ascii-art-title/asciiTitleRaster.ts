@@ -12,6 +12,7 @@ const MOBILE_WIDTH_FILL = 0.78;
 const DESKTOP_WIDTH_FILL = 0.48;
 const MAX_TITLE_WIDTH_PX = 760;
 const MAX_BLOCK_HEIGHT_SHARE = 0.7;
+const CLEARANCE_ABOVE_OR_BELOW_PX = 80;
 const TARGET_TITLE_COLUMNS = 130;
 const MIN_CELL_WIDTH_PX = 3;
 // Taller cells leave room for complete monospace glyphs.
@@ -160,8 +161,7 @@ function fitDisplayFontSize(metrics: TitleMetrics, lineCount: number, area: Titl
 
   const blockHeightEm = metrics.capHeightEm + (lineCount - 1) * LINE_PITCH_EM;
   // Leave equal clearance above and below, keeping the widest phrase box centered.
-  const pickerHeight = area.width <= 480 && area.height > 480 ? 88 : 44;
-  const availableHeight = Math.max(1, area.height - 2 * (pickerHeight + 32));
+  const availableHeight = Math.max(1, area.height - 2 * CLEARANCE_ABOVE_OR_BELOW_PX);
   const sizeForHeight = Math.min(area.height * MAX_BLOCK_HEIGHT_SHARE, availableHeight) / blockHeightEm;
 
   return Math.min(sizeForWidth, sizeForHeight);

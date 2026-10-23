@@ -1,36 +1,35 @@
 # AACII - Digital by nature
 
 A digital pollination cycle in four chapters. The original white ASCII opening,
-terminal typing, synthesized key clicks, sound hint and six-style background
-picker remain unchanged. Scroll turns the signal into a habitat: the original
-traced blue hummingbird visits coral dot flowers, a black field of dark water
-ripples wherever a visitor lets a drop fall, and an acid-yellow seed head returns
+terminal typing, synthesized key clicks, sound hint and `ascii` dither
+background remain unchanged. Scroll turns the signal into a habitat: coral dot
+flowers, a black field of dark water ripples wherever a visitor lets a drop fall,
+and an acid-yellow seed head returns
 the story to its beginning. Short English copy carries the story; generated
 dots, stems and seeds carry the color. No downloaded assets, new fonts or dependencies were added.
 
 ## The habitats
 
 - `#index`: the preserved monochrome opening. Its field dissolves with scrolling.
-- `#life`: "Life is not natural. It is digital." The original 76 bird frames,
-  shape, three blue tones and 4.63-second cycle are unchanged. An abstract gray
-  bloom field uses the hero's selected raster style, with a centered title and blue bird.
+- `#life`: "Life is not natural. It is digital." An abstract gray bloom field
+  uses the same `ascii` raster style as the hero, with a centered title.
 - `#garden`: "Touch the soil. Watch it bloom." A black field of dark water:
   long gray swells drift across it and glyphs gather on their thin crests,
   drawn by the same Dither renderer and raster style as the opening and `#life`.
-  The water is calm near the top, where the blue bird sits, and under the
-  centered white title. A click or tap lets a drop fall into the water: a front
+  The water is calm near the top and under the centered white title. A click or
+  tap lets a drop fall into the water: a front
   expands from the point with a train of four crests behind it for 3.2 seconds,
   brightening the water and bending it as they pass; at most 6 drops show at
   once. One drop falls by itself just below the title when the scene becomes
   current. The water is decorative and takes no keyboard input. Touch dragging
   keeps normal page scrolling. Reduced motion shows still water and no drops.
-- `#cycle`: "Nothing ends. It reseeds." A 610-seed SVG follows the golden angle,
-  turning slowly above an acid field. "Begin again" and the footer habitat links
+- `#cycle`: An ASCII ground opens into a soft round clearing for the centered
+  title, "Nothing ends. It reseeds." "Begin again" and the footer habitat links
   use native anchors and work without scripting.
 
 The habitat palette is ivory `#f5f3df`, green ink `#12231e`, chlorophyll
-`#476b30`, acid `#e3ff62`, coral `#ff654c`, cyan `#78e4dd`, midnight `#101f29`
-and the bird's original blues. The opening retains its exact gray and white
+`#476b30`, acid `#e3ff62`, coral `#ff654c`, cyan `#78e4dd`, midnight `#101f29`.
+The opening retains its exact gray and white
 palette. All new styles are prefixed and leave hero styles untouched.
 
 `GardenWater` mounts the shared Dither renderer with the water field defined in
@@ -41,9 +40,9 @@ soft mouse ripple runs only on fine pointers without reduced motion.
 
 `HabitatMotion` uses the existing activity observer to pause CSS pollen and seed
 motion offscreen and in hidden tabs. Reduced motion disables these animations.
-The hummingbird, title and opening retain their existing motion controls.
-Each new canvas, observer and listener has an effect cleanup. Mobile compositions
-keep the bird and flower visible and put the closing seed head below the text.
+The title and opening retain their existing motion controls. Each new canvas,
+observer and listener has an effect cleanup. Mobile compositions keep the
+flower visible and put the closing seed head below the text.
 
 ## Development
 
@@ -63,51 +62,16 @@ port. `npm run check` runs lint, typecheck and build together.
 ## Structure
 
 - `src/app/`: root layout, metadata, fonts and global styles.
-- `src/app/page.tsx`: wraps the page in `BackgroundStyleProvider`, renders
-  `SiteBackground` once, then Hero, Life, Garden and Cycle.
-- `src/components/sections/Hero.tsx`: the first screen, with the background
-  picker and the title.
+- `src/app/page.tsx`: renders `SiteBackground` once, then Hero, Life, Garden and
+  Cycle.
+- `src/components/sections/Hero.tsx`: the first screen, with the title.
 - `src/components/sections/Life.tsx` and `life/`: the pollination habitat below
   the hero. `LifeBloom.tsx` mounts the shared Dither renderer with the bloom field
   defined in `src/shaders/chunks/bloomField.ts`.
-  `bloomLayout.ts` supplies shader centers and radii and the CSS bird anchor;
+  `bloomLayout.ts` supplies shader centers and radii;
   `bloom.css` centers the title over the monochrome field on every screen.
   The statement is `MatrixTitle` with an `h2`, no sound hint and
-  `variant="section"`. The bird is traced frame by frame from the user's reference
-  recording.
-  - `hummingbirdFrames.data.ts`: generated by `scripts/extract-hummingbird.py`,
-    never edited by hand. 76 frames of 51 by 34 cells, 2 bits per cell, as
-    base64.
-  - `hummingbirdFrames.ts`: decodes the frames once when the module loads, and
-    `frameTones(index)` returns a view of one frame.
-  - `dotMatrixPainter.ts`: `paintDotMatrix` draws one frame. Pale dots
-    `#9eb3ee`, blue dots `#0850ea` and navy capsules `#121748`. Dots are 0.72 of
-    the cell pitch. Navy cells stacked in a column join into one capsule 0.62 of
-    the pitch wide that reaches 0.45 of the pitch past the first and last cell
-    centers. One Path2D fill per color.
-  - `hummingbirdRunner.ts` and `HummingbirdCanvas.tsx`: one
-    requestAnimationFrame loop that shows frame
-    `floor(clock / FRAME_SECONDS) % 76`, about 61 ms per frame, so one loop
-    lasts 139 / 30 = 4.63 s like the recording. It repaints only when the frame
-    changes, pauses offscreen, in a hidden tab and on unmount, and a long gap
-    moves the clock by at most 0.1 s. Under reduced motion it paints one still
-    frame, frame 9, wings raised in a V.
-- `scripts/extract-hummingbird.py`: rebuilds the frame data from the recording.
-  It needs Python 3 with numpy and opencv-python. Usage:
-
-  ```sh
-  python scripts/extract-hummingbird.py "<path to Grabación 2026-10-18 194032.mp4>"
-  ```
-
-  The recording is a 428 x 520 px dot matrix on a fixed grid: pitch 8.3 px, and
-  the first dot center at (1.29, 4.6). Each cell takes the nearest of four
-  colors over a 3 x 3 pixel sample: background (224, 224, 227), pale
-  (158, 179, 238), blue (8, 80, 234) and navy (18, 23, 72). The bird is cropped
-  with one empty cell of margin on each side. Recording frames 0 to 138 are kept
-  as one loop, and a frame is kept only when more than 8 cells changed from the
-  last kept frame, since the recording repeats frames. The still frame is the
-  kept frame that stands in for recording frame 18. The same recording always
-  gives the same file.
+  `variant="section"`.
 - `src/components/sections/hero/`: the title, also used by the section 2
   statement.
   - `MatrixTitle.tsx` and `MatrixTitle.css`: the terminal style text block, the
@@ -127,10 +91,7 @@ port. `npm run check` runs lint, typecheck and build together.
   switch state machine, `keySound.ts` the synthesized key click and its audio
   unlock, `watchActivity.ts` reports when the title is offscreen or the tab is
   hidden so the loop can pause.
-- `src/components/layout/`: the page background and its picker.
-  - `BackgroundStyle.tsx`: the six styles, the provider that holds the selected
-    style, and `useBackgroundStyle`.
-  - `BackgroundPicker.tsx`: the radio group, rendered in the hero.
+- `src/components/layout/`: the page background.
   - `SiteBackground.tsx`: the fixed layer, with Dither and its scroll fade, and
     the pointer trail.
 - `src/components/effects/`: Dither, and the ASCII trail (`AsciiTrail.tsx`,
@@ -167,13 +128,13 @@ so it does not reach the client bundle.
 
 The background is one layer for the whole page. It is fixed to the viewport,
 `100lvh` tall, and sits behind both sections, so the mobile address bar never
-resizes the WebGL canvas. The selection lives in `BackgroundStyleProvider`, so
-the picker in the hero and the page-level layer share it. The picker stays at
-the bottom right of the hero and scrolls away with it.
+resizes the WebGL canvas. The page, including the `#life` and `#garden` fields,
+uses the `ascii` dither style; the other styles stay available through Dither's
+`ditherMode` prop.
 
 The opening stays white (`#ffffff`, theme color and color scheme included). Dither
-keeps the same wave animation, intro reveal and quality profiles. ASCII is the
-initial selection on each load. All six styles cap their darkest ink at
+keeps the same wave animation, intro reveal and quality profiles. All six styles
+cap their darkest ink at
 `#a8a8a8`, with most marks lighter. Quantization stays within the configured
 color endpoints so wave peaks cannot compete with the black title:
 
@@ -191,16 +152,6 @@ The previous `bayer4`, `bayer2`, `crosshatch`, `noise` and `none` modes remain
 available through Dither's unchanged props. New modes preserve color, palette
 and transparent-background support. Shader compilation and link failures report
 the WebGL diagnostic while the plain white page remains usable.
-
-The picker is a native radio group named "Background style". Its small uppercase
-mono labels use black underlined text for the selection and gray for the other
-choices. Tab focuses the group and native arrow keys move the selection. Each
-label is at least 44 pixels wide and high, with a visible focus ring. It sits 16
-pixels from the right edge plus the right safe area inset, and is never wider
-than the viewport minus that padding on both sides. It wraps into two rows of
-three on screens up to 480 pixels wide and uses one compact row on short
-screens. The title keeps equal clearance above and below, taken from the
-picker height, so the two never overlap and the title stays centered.
 
 Switching crossfades the two raster treatments over 350 ms inside the existing
 WebGL context and animation loop. The wave field is computed once per frame;
@@ -279,8 +230,8 @@ That line is about 36.7 percent of the viewport width on phones, sliding to 17.3
 percent from 480 to 1280 px, capped at 331 px. A capital letter never gets
 shorter than 12.6 px, so the font size never drops below about 22 px, which keeps
 VT323 readable on the smallest phones. The font size follows from that width and from the height
-left after the picker clearance, so the title never overflows or reaches the
-picker. Everything sits close together.
+left after 160 px of clearance, so the title never overflows or reaches the
+edges. Everything sits close together.
 Letters stand in fixed-width cells of VT323's 0.4 em advance plus only 0.02 em of
 tracking, a word space is a thinner 0.26 em cell, and the leading is 0.72 em, so
 the two lines almost touch with a small gap. Each line is centered in the
@@ -427,13 +378,12 @@ when there is no sound.
 ## Performance and accessibility
 
 The page has one Dither WebGL canvas for the opening, one for the Life bloom
-field, one for the Garden water, one 2D hummingbird canvas and, on fine
-pointers without reduced motion, the pointer trail canvas. Dither creates a
+field, one for the Garden water, and, on fine pointers without reduced motion,
+the pointer trail canvas. Dither creates a
 canvas per effect setup and releases its context and resources on cleanup,
 including React Strict Mode effect replay. The trail has its own canvas and
 listener, released on unmount. The title adds no canvas and no resize listener:
-it is text in cells, sized by CSS. The bird's frame data is about 44 KB of
-base64 in the client bundle, and the chunk that holds it is about 25 KB gzipped.
+it is text in cells, sized by CSS.
 
 Quality tiers reduce Dither resolution for small screens, coarse pointers, data
 saving and lower CPU counts. Device pixel ratio is capped at 1 for low quality,
@@ -445,11 +395,11 @@ the screenshot QA service.
 
 Reduced motion freezes the wave field, removes the pointer trail, and shows the
 first phrase finished at once, with no loop, no decode flicker, no cursor, no
-slide, no glitch cuts and no sound. In section 2 it shows the still bird frame
-and the full static statement, with no loop, cursor, cuts or sound. The page has
+slide, no glitch cuts and no sound. In section 2 it shows the full static
+statement, with no loop, cursor, cuts or sound. The page has
 an `h1` reading "SYSTEMS IN MOTION." and an `h2` reading "Life is not natural.
 It is digital." for assistive technology. The animated cells, the other phrases,
-the trail and the bird canvas are hidden from it. Both headings are visually
+and the trail are hidden from it. Both headings are visually
 hidden while their cells are pending or ready. If scripting is off, or if VT323
 is unavailable, both are shown as visible JetBrains Mono text instead.
 

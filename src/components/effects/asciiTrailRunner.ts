@@ -1,3 +1,4 @@
+import { SCENE_PALETTE } from '@/data/scenePalette';
 import { readFontFamily } from '@/lib/fontFamily';
 import { TrailField } from './asciiTrailField';
 
@@ -8,8 +9,16 @@ const FONT_WEIGHT = 500;
 const MAX_LIVE_CELLS = 260;
 // A move after a longer pause starts a new stroke instead of drawing a line from the old position.
 const STROKE_GAP_MS = 80;
-// A very dull black: the strongest cell is still far lighter than the title.
-const TRAIL_RGB = '10, 10, 10';
+
+function hexToRgbList(hex: string): string {
+  const red = parseInt(hex.slice(1, 3), 16);
+  const green = parseInt(hex.slice(3, 5), 16);
+  const blue = parseInt(hex.slice(5, 7), 16);
+  return `${red}, ${green}, ${blue}`;
+}
+
+// The hero ink, so the trail reads as the same color as the hero's background marks.
+const TRAIL_RGB = hexToRgbList(SCENE_PALETTE.index.ink);
 
 export async function loadAsciiTrailFont(): Promise<string> {
   const family = readFontFamily('--font-jetbrains-mono');

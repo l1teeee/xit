@@ -1,4 +1,3 @@
-import { BackgroundStyleProvider } from '@/components/layout/BackgroundStyle';
 import { SceneIndicator } from '@/components/layout/SceneIndicator';
 import { SiteBackground } from '@/components/layout/SiteBackground';
 import { Hero } from '@/components/sections/Hero';
@@ -9,7 +8,7 @@ import { SceneStage } from '@/components/stage/SceneStage';
 
 export default function Home() {
   return (
-    <BackgroundStyleProvider>
+    <>
       <SiteBackground />
       <main id="main">
         <SceneStage>
@@ -20,6 +19,6 @@ export default function Home() {
         </SceneStage>
       </main>
       <SceneIndicator />
-    </BackgroundStyleProvider>
+    </>
   );
 }

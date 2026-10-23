@@ -1,19 +1,58 @@
 .scene-stage { position: relative; }
 
 .scene-stage.is-staged {
-  height: 100svh;
+  --toolbar-overlap: 0px;
+  height: 100vh;
   isolation: isolate;
   overflow: clip;
 }
 
-/* The shadow paints only outside the rounded card, so a transparent card still shows what is behind it. */
+@supports (height: 100lvh) {
+  .scene-stage.is-staged {
+    /* ScrollTrigger freezes the pinned height and ignores toolbar resizes, so the stage covers the large viewport and the card subtracts the part hidden by the toolbar. */
+    --toolbar-overlap: calc(100lvh - 100dvh);
+    height: 100lvh;
+  }
+}
+
 .scene-stage.is-staged > .scene-card {
   position: absolute;
-  inset: var(--frame-margin);
+  inset: var(--frame-margin) var(--frame-margin) calc(var(--frame-margin) + var(--toolbar-overlap));
   isolation: isolate;
   overflow: clip;
   border-radius: var(--frame-radius);
-  box-shadow: 0 0 0 100vmax var(--frame-color);
+}
+
+.scene-frost { display: none; }
+
+.scene-stage.is-staged > .scene-frost {
+  display: block;
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background-color: var(--frame-color);
+  background-image: linear-gradient(135deg, rgb(255 255 255 / 0.22) 0%, rgb(255 255 255 / 0) 38%, rgb(255 255 255 / 0) 62%, rgb(255 255 255 / 0.12) 100%);
+  -webkit-backdrop-filter: blur(20px) saturate(1.15);
+  backdrop-filter: blur(20px) saturate(1.15);
+  /* The stage timeline sets this ring's clip path to match the card. */
+}
+
+.scene-stage.is-staged > .scene-frost::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0.14;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.scene-stage.is-staged > .scene-frost::after {
+  content: "";
+  position: absolute;
+  inset: calc(var(--frame-margin) - 1px) calc(var(--frame-margin) - 1px) calc(var(--frame-margin) + var(--toolbar-overlap) - 1px);
+  border: 1px solid rgb(255 255 255 / 0.4);
+  border-radius: calc(var(--frame-radius) + 1px);
 }
 
 .scene-stage.is-staged > .scene-card > [data-scene] {
@@ -28,63 +67,3 @@
 .scene-stage.is-staged > .scene-card > [data-scene-state="current"] { visibility: visible; }
 
 /* The title limits its height against the card, which is smaller than the viewport by the frame on both sides. */
-.scene-stage.is-staged .matrix-title { --viewport-height: calc(100svh - 2 * var(--frame-margin)); }
-
-.bird-flight {
-  display: none;
-  position: absolute;
-  pointer-events: none;
-}
-
-.is-staged > .scene-card > .bird-flight {
-  display: block;
-  top: 0;
-  left: 0;
-  z-index: 4;
-  opacity: 0;
-  will-change: transform;
-}
-
-.bird-depth,
-.bird-hover { width: 100%; height: 100%; }
-
-.garden-bird,
-.cycle-bird {
-  position: absolute;
-  width: var(--bird-anchor-width);
-  aspect-ratio: 51 / 34;
-  pointer-events: none;
-}
-
-/* Bird height is 2/3 of its width, so "/ 3" centres the anchor box on the chosen point. */
-.garden-bird {
-  --bird-anchor-width: calc(min(82vw, 820px) * 0.22);
-  top: calc(12% - var(--bird-anchor-width) / 3);
-  right: max(16px, calc(8% - var(--bird-anchor-width) / 2));
-}
-
-.cycle-bird {
-  --bird-anchor-width: calc(min(82vw, 820px) * 0.2);
-  --seed-size: min(68vw, 1000px, 100cqh);
-  --seed-overhang: 9vw;
-  --seed-left: calc(100% + var(--seed-overhang) - var(--seed-size));
-  --seed-top: calc(50% - var(--seed-size) / 2);
-  left: calc(var(--seed-left) + var(--seed-size) * 0.12 - var(--bird-anchor-width));
-  top: calc(var(--seed-top) + var(--seed-size) * 0.25 - var(--bird-anchor-width) / 3);
-}
-
-@media (max-width: 900px) {
-  .cycle-bird {
-    --seed-size: min(85vw, 100cqh);
-    --seed-overhang: 25vw;
-  }
-}
-
-@media (max-width: 540px) {
-  .cycle-bird {
-    --seed-size: min(100cqw, 100cqh);
-    --seed-overhang: 0px;
-    left: calc(var(--seed-left) + var(--seed-size) * 0.17 - var(--bird-anchor-width) / 2);
-    top: calc(var(--seed-top) + var(--seed-size) * 0.08 - var(--bird-anchor-width) / 3);
-  }
-}

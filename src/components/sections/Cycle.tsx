@@ -1,17 +1,14 @@
-import { cycle } from '@/data/site';
+import { SCENE_PALETTE } from '@/data/scenePalette';
 import { MatrixTitle } from './hero/MatrixTitle';
-import { HabitatMotion } from './nature/HabitatMotion';
-import { SeedHead } from './nature/SeedHead';
+import { cycle } from '@/data/site';
+import { CycleVoid } from './cycle/CycleVoid';
+import './cycle/cycle.css';
 
 export function Cycle() {
   return (
-    <section id="cycle" data-scene data-scene-ground="#ffffff" className="nature-cycle" aria-labelledby="cycle-title">
-      <HabitatMotion>
-        <SeedHead />
-        <div className="cycle-bird" data-bird-anchor data-bird-facing="right" aria-hidden="true" />
-      </HabitatMotion>
+    <section id="cycle" data-scene data-scene-ground="#ffffff" data-scene-frame={SCENE_PALETTE.cycle.frame} className="cycle-section" aria-labelledby="cycle-title">
+      <CycleVoid />
       <div className="cycle-copy">
-        <p className="cycle-overline">From seed to bloom.</p>
         <MatrixTitle id="cycle-title" phrases={cycle.phrases} headingLevel={2} soundHint={false} variant="section" />
       </div>
     </section>
