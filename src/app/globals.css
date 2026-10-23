@@ -30,6 +30,10 @@
 /* Height of the background picker, which the hero title keeps clear of. It follows the picker rules below. */
 :root {
   --picker-height: 44px;
+  /* The staged scenes sit in a rounded card inset by this margin; the margin is one soft gray for every scene. */
+  --frame-margin: clamp(10px, 1.4vw, 28px);
+  --frame-radius: clamp(16px, 1.8vw, 34px);
+  --frame-color: #e0e0e0;
 }
 
 /* Absolute, not fixed: the picker belongs to the hero and scrolls away with it. */

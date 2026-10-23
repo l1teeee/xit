@@ -5,7 +5,8 @@ import { measureBirdPoses } from './birdPoses';
 import { SCENE_IDS, stageTiming } from './stageTiming';
 
 export function buildStageTimeline(stage: HTMLElement, reduced: boolean, coarse: boolean) {
-  const scenes = Array.from(stage.querySelectorAll<HTMLElement>(':scope > [data-scene]'));
+  const card = stage.querySelector<HTMLElement>('.scene-card')!;
+  const scenes = Array.from(card.querySelectorAll<HTMLElement>(':scope > [data-scene]'));
   const bird = stage.querySelector<HTMLElement>('.bird-flight')!;
   const depth = stage.querySelector<HTMLElement>('.bird-depth')!;
   const hover = stage.querySelector<HTMLElement>('.bird-hover')!;
@@ -15,12 +16,10 @@ export function buildStageTimeline(stage: HTMLElement, reduced: boolean, coarse:
     opacity: gsap.quickSetter(scene, 'opacity'),
     y: gsap.quickSetter(scene, 'y', 'px'),
   }));
-  const setGround = gsap.quickSetter(stage, 'backgroundColor');
-  const originalGround = stage.style.backgroundColor;
-  const grounds = scenes.map((scene, index) => {
-    const gray = scene.dataset.sceneGround === '#000000' ? 0 : 255;
-    return `rgba(${gray}, ${gray}, ${gray}, ${index === 0 ? 0 : 1})`;
-  });
+  const setGround = gsap.quickSetter(card, 'backgroundColor');
+  const originalGround = card.style.backgroundColor;
+  const groundGrays = scenes.map(scene => (scene.dataset.sceneGround === '#000000' ? 0 : 255));
+  const grounds = groundGrays.map((gray, index) => `rgba(${gray}, ${gray}, ${gray}, ${index === 0 ? 0 : 1})`);
   const groundTransitions = grounds.slice(0, -1).map((ground, index) => (
     gsap.utils.interpolate(ground, grounds[index + 1])
   ));
@@ -29,7 +28,7 @@ export function buildStageTimeline(stage: HTMLElement, reduced: boolean, coarse:
   const flight = createBirdFlightMotion(bird, hover);
   const timing = stageTiming(coarse);
   const playhead = { time: 0 };
-  let poses = measureBirdPoses(stage, scenes, bird);
+  let poses = measureBirdPoses(card, scenes, bird);
   let current = -1;
   let transition = -1;
   let lastTime = 0;
@@ -48,15 +47,15 @@ export function buildStageTimeline(stage: HTMLElement, reduced: boolean, coarse:
     duration: 1.6, ease: 'expo.out', paused: true, immediateRender: false,
   });
   const bob = reduced ? null : gsap.fromTo(hover, { y: 0 }, {
-    y: () => -stage.clientHeight * 0.006,
+    y: () => -card.clientHeight * 0.006,
     duration: 1.6, ease: 'sine.inOut', yoyo: true, repeat: -1, paused: true,
   });
   const depthScale = reduced ? null : gsap.fromTo(depth, { scale: 0.88 }, {
     scale: 1.12,
     duration: 5.5, ease: 'sine.inOut', yoyo: true, repeat: -1, paused: true,
   });
-  const depthSway = reduced ? null : gsap.fromTo(depth, { x: () => -stage.clientWidth * 0.015 }, {
-    x: () => stage.clientWidth * 0.015,
+  const depthSway = reduced ? null : gsap.fromTo(depth, { x: () => -card.clientWidth * 0.015 }, {
+    x: () => card.clientWidth * 0.015,
     duration: 7.3, ease: 'sine.inOut', yoyo: true, repeat: -1, paused: true,
   });
 
@@ -112,13 +111,13 @@ export function buildStageTimeline(stage: HTMLElement, reduced: boolean, coarse:
       }
       const departure = ease(clamp(progress / 0.45));
       const arrival = ease(clamp((progress - 0.55) / 0.45));
-      const ground = ease(clamp((progress - 0.25) / 0.5));
+      const colorShift = ease(clamp((progress - 0.25) / 0.5));
       sceneSetters[scene].opacity(1 - departure);
       sceneSetters[scene].y(-10 * departure);
       sceneSetters[scene + 1].opacity(arrival);
       sceneSetters[scene + 1].y(10 * (1 - arrival));
-      setGround(groundTransitions[scene](ground));
-      flight.travel(poses[scene], poses[scene + 1], progress, stage.clientHeight, direction);
+      setGround(groundTransitions[scene](colorShift));
+      flight.travel(poses[scene], poses[scene + 1], progress, card.clientHeight, direction);
     } else {
       if (transition !== -1) clearSceneStyles();
       transition = -1;
@@ -139,7 +138,7 @@ export function buildStageTimeline(stage: HTMLElement, reduced: boolean, coarse:
 
   function refresh() {
     clearSceneStyles();
-    poses = measureBirdPoses(stage, scenes, bird);
+    poses = measureBirdPoses(card, scenes, bird);
     transition = -1;
     bob?.invalidate();
     if (depthSway) {
@@ -179,7 +178,7 @@ export function buildStageTimeline(stage: HTMLElement, reduced: boolean, coarse:
       depthScale?.revert();
       depthSway?.revert();
       clearSceneStyles();
-      stage.style.backgroundColor = originalGround;
+      card.style.backgroundColor = originalGround;
       for (const scene of scenes) delete scene.dataset.sceneState;
       bird.removeAttribute('style');
       depth.removeAttribute('style');

@@ -4,7 +4,7 @@
   position: fixed;
   z-index: 20;
   top: 50%;
-  right: max(18px, env(safe-area-inset-right));
+  right: calc(var(--frame-margin) + max(18px, env(safe-area-inset-right)));
   transform: translateY(-50%);
   display: grid;
   pointer-events: none;
@@ -50,7 +50,7 @@
 
 @media (max-width: 540px) {
   .scene-indicator {
-    right: max(10px, env(safe-area-inset-right));
+    right: calc(var(--frame-margin) + max(10px, env(safe-area-inset-right)));
     font-size: 9px;
   }
 }

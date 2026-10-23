@@ -6,8 +6,8 @@ export type BirdPose = {
   opacity: number;
 };
 
-export function measureBirdPoses(stage: HTMLElement, scenes: HTMLElement[], bird: HTMLElement): BirdPose[] {
-  const bounds = stage.getBoundingClientRect();
+export function measureBirdPoses(card: HTMLElement, scenes: HTMLElement[], bird: HTMLElement): BirdPose[] {
+  const bounds = card.getBoundingClientRect();
   const life = scenes[1].querySelector<HTMLElement>('[data-bird-anchor]')!;
   const width = life.getBoundingClientRect().width;
   bird.style.width = `${width}px`;

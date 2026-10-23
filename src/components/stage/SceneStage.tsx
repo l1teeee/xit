@@ -59,8 +59,10 @@ export function SceneStage({ children }: { children: ReactNode }) {
 
   return (
     <div ref={ref} className="scene-stage">
-      {children}
-      <BirdFlight />
+      <div className="scene-card">
+        {children}
+        <BirdFlight />
+      </div>
     </div>
   );
 }

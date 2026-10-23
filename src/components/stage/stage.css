@@ -6,7 +6,17 @@
   overflow: clip;
 }
 
-.scene-stage.is-staged > [data-scene] {
+/* The shadow paints only outside the rounded card, so a transparent card still shows what is behind it. */
+.scene-stage.is-staged > .scene-card {
+  position: absolute;
+  inset: var(--frame-margin);
+  isolation: isolate;
+  overflow: clip;
+  border-radius: var(--frame-radius);
+  box-shadow: 0 0 0 100vmax var(--frame-color);
+}
+
+.scene-stage.is-staged > .scene-card > [data-scene] {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -15,7 +25,10 @@
   background: transparent;
 }
 
-.scene-stage.is-staged > [data-scene-state="current"] { visibility: visible; }
+.scene-stage.is-staged > .scene-card > [data-scene-state="current"] { visibility: visible; }
+
+/* The title limits its height against the card, which is smaller than the viewport by the frame on both sides. */
+.scene-stage.is-staged .matrix-title { --viewport-height: calc(100svh - 2 * var(--frame-margin)); }
 
 .bird-flight {
   display: none;
@@ -23,7 +36,7 @@
   pointer-events: none;
 }
 
-.is-staged > .bird-flight {
+.is-staged > .scene-card > .bird-flight {
   display: block;
   top: 0;
   left: 0;
