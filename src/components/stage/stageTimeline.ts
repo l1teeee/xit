@@ -4,6 +4,10 @@ import { createBirdFlightMotion } from './birdFlightMotion';
 import { measureBirdPoses } from './birdPoses';
 import { SCENE_IDS, stageTiming } from './stageTiming';
 
+// Contrast grays, not pure black or white: a hard black frame was rejected.
+const FRAME_GRAY_ON_LIGHT_GROUND = '#555555';
+const FRAME_GRAY_ON_DARK_GROUND = '#e0e0e0';
+
 export function buildStageTimeline(stage: HTMLElement, reduced: boolean, coarse: boolean) {
   const card = stage.querySelector<HTMLElement>('.scene-card')!;
   const scenes = Array.from(card.querySelectorAll<HTMLElement>(':scope > [data-scene]'));
@@ -22,6 +26,11 @@ export function buildStageTimeline(stage: HTMLElement, reduced: boolean, coarse:
   const grounds = groundGrays.map((gray, index) => `rgba(${gray}, ${gray}, ${gray}, ${index === 0 ? 0 : 1})`);
   const groundTransitions = grounds.slice(0, -1).map((ground, index) => (
     gsap.utils.interpolate(ground, grounds[index + 1])
+  ));
+  const setFrame = gsap.quickSetter(card, '--frame-color');
+  const frames = groundGrays.map(gray => (gray === 0 ? FRAME_GRAY_ON_DARK_GROUND : FRAME_GRAY_ON_LIGHT_GROUND));
+  const frameTransitions = frames.slice(0, -1).map((frame, index) => (
+    gsap.utils.interpolate(frame, frames[index + 1])
   ));
   const ease = gsap.parseEase('sine.inOut');
   const clamp = gsap.utils.clamp(0, 1);
@@ -117,11 +126,13 @@ export function buildStageTimeline(stage: HTMLElement, reduced: boolean, coarse:
       sceneSetters[scene + 1].opacity(arrival);
       sceneSetters[scene + 1].y(10 * (1 - arrival));
       setGround(groundTransitions[scene](colorShift));
+      setFrame(frameTransitions[scene](colorShift));
       flight.travel(poses[scene], poses[scene + 1], progress, card.clientHeight, direction);
     } else {
       if (transition !== -1) clearSceneStyles();
       transition = -1;
       setGround(grounds[current]);
+      setFrame(frames[current]);
       flight.hold(poses[current]);
     }
 
@@ -179,6 +190,7 @@ export function buildStageTimeline(stage: HTMLElement, reduced: boolean, coarse:
       depthSway?.revert();
       clearSceneStyles();
       card.style.backgroundColor = originalGround;
+      card.style.removeProperty('--frame-color');
       for (const scene of scenes) delete scene.dataset.sceneState;
       bird.removeAttribute('style');
       depth.removeAttribute('style');
