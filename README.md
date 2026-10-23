@@ -3,21 +3,27 @@
 A digital pollination cycle in four chapters. The original white ASCII opening,
 terminal typing, synthesized key clicks, sound hint and six-style background
 picker remain unchanged. Scroll turns the signal into a habitat: the original
-traced blue hummingbird visits coral dot flowers, an interactive midnight garden
-grows from visitor input, and an acid-yellow seed head returns the story to its
-beginning. Short English copy carries the story; generated dots, stems and seeds
-carry the color. No downloaded assets, new fonts or dependencies were added.
+traced blue hummingbird visits coral dot flowers, a black field of dark water
+ripples wherever a visitor lets a drop fall, and an acid-yellow seed head returns
+the story to its beginning. Short English copy carries the story; generated
+dots, stems and seeds carry the color. No downloaded assets, new fonts or dependencies were added.
 
 ## The habitats
 
 - `#index`: the preserved monochrome opening. Its field dissolves with scrolling.
 - `#life`: "Life is not natural. It is digital." The original 76 bird frames,
-  shape, three blue tones and 4.63-second cycle are unchanged. Deterministic SVG
-  phyllotaxis flowers, green stems and drifting acid pollen form the habitat.
-- `#garden`: "A little input. A living world." Tap or click the field to grow a
-  flower, or activate the native "Plant a seed" button with a keyboard. A visible
-  count and live announcement confirm input. Touch dragging keeps normal page
-  scrolling and does not plant. Plants grow in 850 ms and gently sway.
+  shape, three blue tones and 4.63-second cycle are unchanged. An abstract gray
+  bloom field uses the hero's selected raster style, with a centered title and blue bird.
+- `#garden`: "Touch the soil. Watch it bloom." A black field of dark water:
+  long gray swells drift across it and glyphs gather on their thin crests,
+  drawn by the same Dither renderer and raster style as the opening and `#life`.
+  The water is calm near the top, where the blue bird sits, and under the
+  centered white title. A click or tap lets a drop fall into the water: a front
+  expands from the point with a train of four crests behind it for 3.2 seconds,
+  brightening the water and bending it as they pass; at most 6 drops show at
+  once. One drop falls by itself just below the title when the scene becomes
+  current. The water is decorative and takes no keyboard input. Touch dragging
+  keeps normal page scrolling. Reduced motion shows still water and no drops.
 - `#cycle`: "Nothing ends. It reseeds." A 610-seed SVG follows the golden angle,
   turning slowly above an acid field. "Begin again" and the footer habitat links
   use native anchors and work without scripting.
@@ -27,17 +33,11 @@ The habitat palette is ivory `#f5f3df`, green ink `#12231e`, chlorophyll
 and the bird's original blues. The opening retains its exact gray and white
 palette. All new styles are prefixed and leave hero styles untouched.
 
-`GardenPainter` owns one 2D animation loop, with 8 initial plants on phones,
-11 on tablets and 16 on desktop. Retained plants are capped at 24 on phones
-and 48 on larger screens. DPR is capped at 1.25 or 1.75. The loop pauses
-offscreen and in hidden tabs, preserves its clock across pauses, and cancels
-on teardown. Reduced motion renders a still scene and plants fully opened
-flowers on input. An SVG garden remains visible if 2D canvas is unavailable.
-The new habitats do not depend on WebGL.
-
-Run `node scripts/check-garden.mjs` for a dependency-free renderer lifecycle
-check. It exercises repeated planting, bounded drawing work, DPR caps,
-pause/resume timing, live reduced-motion changes, still redraws and cleanup.
+`GardenWater` mounts the shared Dither renderer with the water field defined in
+`src/shaders/chunks/waterField.ts` and turns click ripples on while the scene is
+current. The drop is the ripple Dither already had, now a front with a train of
+crests. The renderer pauses while the scene is not current or offscreen, and the
+soft mouse ripple runs only on fine pointers without reduced motion.
 
 `HabitatMotion` uses the existing activity observer to pause CSS pollen and seed
 motion offscreen and in hidden tabs. Reduced motion disables these animations.
@@ -68,10 +68,12 @@ port. `npm run check` runs lint, typecheck and build together.
 - `src/components/sections/Hero.tsx`: the first screen, with the background
   picker and the title.
 - `src/components/sections/Life.tsx` and `life/`: the pollination habitat below
-  the hero. The bird sits among generated botanical artwork, above the statement.
-  `HabitatArtwork.tsx` builds the static SVG flowers, stems and pollen.
+  the hero. `LifeBloom.tsx` mounts the shared Dither renderer with the bloom field
+  defined in `src/shaders/chunks/bloomField.ts`.
+  `bloomLayout.ts` supplies shader centers and radii and the CSS bird anchor;
+  `bloom.css` centers the title over the monochrome field on every screen.
   The statement is `MatrixTitle` with an `h2`, no sound hint and
-  `variant="life"`. The bird is traced frame by frame from the user's reference
+  `variant="section"`. The bird is traced frame by frame from the user's reference
   recording.
   - `hummingbirdFrames.data.ts`: generated by `scripts/extract-hummingbird.py`,
     never edited by hand. 76 frames of 51 by 34 cells, 2 bits per cell, as
@@ -147,8 +149,9 @@ port. `npm run check` runs lint, typecheck and build together.
   metadata content and their types, such as `TitlePhrase`.
 - `public/textures/earth-land.png`: the globe's land mask, kept for the globe.
 - `docs/ASSETS.md`: asset provenance.
-- `src/components/sections/Garden.tsx` and `garden/`: planting controls, pointer
-  input, accessible feedback, the bounded 2D renderer and scoped garden styles.
+- `src/components/sections/Garden.tsx` and `garden/`: the black water scene.
+  `GardenWater.tsx` mounts Dither with the water field and click drops;
+  `garden.css` holds the scoped garden styles.
 - `src/components/sections/Cycle.tsx` and `nature/`: closing chapter, SVG seed
   head, shared CSS activity wrapper and habitat styles.
 
@@ -423,8 +426,8 @@ when there is no sound.
 
 ## Performance and accessibility
 
-The page has one Dither WebGL canvas, one 2D hummingbird canvas, one 2D garden
-canvas and, on fine
+The page has one Dither WebGL canvas for the opening, one for the Life bloom
+field, one for the Garden water, one 2D hummingbird canvas and, on fine
 pointers without reduced motion, the pointer trail canvas. Dither creates a
 canvas per effect setup and releases its context and resources on cleanup,
 including React Strict Mode effect replay. The trail has its own canvas and

@@ -45,13 +45,13 @@
 
 /* Bird height is 2/3 of its width, so "/ 3" centres the anchor box on the chosen point. */
 .garden-bird {
-  --bird-anchor-width: calc(var(--bird-life-width, min(82vw, 820px)) * 0.22);
+  --bird-anchor-width: calc(min(82vw, 820px) * 0.22);
   top: calc(12% - var(--bird-anchor-width) / 3);
-  right: calc(8% - var(--bird-anchor-width) / 2);
+  right: max(16px, calc(8% - var(--bird-anchor-width) / 2));
 }
 
 .cycle-bird {
-  --bird-anchor-width: calc(var(--bird-life-width, min(82vw, 820px)) * 0.2);
+  --bird-anchor-width: calc(min(82vw, 820px) * 0.2);
   --seed-size: min(68vw, 1000px, 100cqh);
   --seed-overhang: 9vw;
   --seed-left: calc(100% + var(--seed-overhang) - var(--seed-size));

@@ -10,7 +10,6 @@ export function measureBirdPoses(stage: HTMLElement, scenes: HTMLElement[], bird
   const bounds = stage.getBoundingClientRect();
   const life = scenes[1].querySelector<HTMLElement>('[data-bird-anchor]')!;
   const width = life.getBoundingClientRect().width;
-  stage.style.setProperty('--bird-life-width', `${width}px`);
   bird.style.width = `${width}px`;
   bird.style.height = `${width * 34 / 51}px`;
 

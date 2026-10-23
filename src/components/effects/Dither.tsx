@@ -3,13 +3,19 @@
 
 import { useEffect, useRef, type CSSProperties } from 'react';
 import { getPointer, retainPointer } from '@/lib/pointer';
+import { BLOOM_FIELD } from '@/shaders/chunks/bloomField';
+import { WATER_FIELD } from '@/shaders/chunks/waterField';
 import './Dither.css';
 
 export type DitherColor = string | [number, number, number];
 export type DitherMode = 'ascii' | 'dots' | 'dither' | 'hybrid' | 'bayer' | 'bayer4' | 'bayer2' | 'halftone' | 'lines' | 'crosshatch' | 'noise' | 'none';
 export type DitherMouseEffect = 'erase' | 'reveal' | 'ripple';
+export type DitherField =
+  | { kind: 'bloom'; layout: (width: number, height: number) => Float32Array }
+  | { kind: 'water' };
 
 export interface DitherProps {
+  field?: DitherField;
   waveSpeed?: number;
   waveFrequency?: number;
   waveAmplitude?: number;
@@ -37,6 +43,7 @@ export interface DitherProps {
 }
 
 type Settings = {
+  field?: DitherField;
   waveSpeed: number;
   waveFrequency: number;
   waveAmplitude: number;
@@ -83,10 +90,15 @@ const MODES: Record<DitherMode, number> = {
 };
 const EFFECTS: Record<string, number> = { erase: 0, reveal: 1, ripple: 2 };
 const MAX_TRAIL = 16;
-const MAX_RIPPLES = 4;
+const MAX_RIPPLES = 6;
 const MAX_PALETTE = 8;
 const INTRO_SECONDS = 1.8;
-const RIPPLE_SECONDS = 1.6;
+const BLOOM_OPEN_SECONDS = 2.4;
+const RIPPLE_SECONDS = 3.2;
+// uFieldShape values: 0 is the hero's waves.
+const FIELD_SHAPES = { bloom: 1, water: 2 } as const;
+// Where the first drop of a water field falls, just below the centered title, so visitors find the water without text.
+const WATER_INTRO_DROP = { x: 0, y: -0.22 } as const;
 
 const VERTEX = `#version 300 es
 in vec2 aPosition;
@@ -115,7 +127,13 @@ uniform vec4 uRipples[${MAX_RIPPLES}];
 uniform int uRippleCount;
 uniform float uIntro;
 uniform float uReach;
+uniform int uFieldShape;
 out vec4 outColor;
+
+const float DROP_FRONT_SPEED = 0.32;
+const float DROP_WAVELENGTH = 0.06;
+const float DROP_DISPLACEMENT = 0.012;
+const float DROP_DENSITY = 1.8;
 
 vec4 mod289(vec4 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
 vec4 permute(vec4 x) { return mod289(((x * 34.0) + 1.0) * x); }
@@ -169,6 +187,21 @@ float pattern(vec2 p) {
   return fbm(p + fbm(p2));
 }
 
+${BLOOM_FIELD}
+
+${WATER_FIELD}
+
+// A falling drop: a front expands from the impact with a train of crests behind it. Returns -1..1.
+float dropWave(float dist, float age) {
+  float life = clamp(age / ${RIPPLE_SECONDS.toFixed(2)}, 0.0, 1.0);
+  float wavelengthsBehindFront = (age * DROP_FRONT_SPEED - dist) / DROP_WAVELENGTH;
+  float frontEdge = smoothstep(-0.5, 0.0, wavelengthsBehindFront);
+  float trainTail = exp(-0.45 * max(wavelengthsBehindFront, 0.0)) * (1.0 - smoothstep(2.8, 3.8, wavelengthsBehindFront));
+  float fadeWithAge = 1.0 - smoothstep(0.0, 1.0, life);
+  float fadeWithDistance = 1.0 / (1.0 + 4.0 * dist);
+  return cos(6.28318530718 * wavelengthsBehindFront) * frontEdge * trainTail * fadeWithAge * fadeWithDistance;
+}
+
 void main() {
   vec2 corner = (gl_FragCoord.xy - 0.5) * uCell;
   vec2 uv = corner / uResolution - 0.5;
@@ -189,10 +222,9 @@ void main() {
     vec4 ripple = uRipples[i];
     vec2 delta = uv - ripple.xy;
     float dist = length(delta);
-    float life = clamp(ripple.z / ${RIPPLE_SECONDS.toFixed(2)}, 0.0, 1.0);
-    float wave = exp(-pow((dist - ripple.z * 0.9) / 0.07, 2.0)) * (1.0 - life) * (1.0 - life) * ripple.w;
-    warp += (dist > 0.0001 ? delta / dist : vec2(0.0)) * wave * 0.035;
-    ring += wave;
+    float wave = dropWave(dist, ripple.z) * ripple.w;
+    warp += (dist > 0.0001 ? delta / dist : vec2(0.0)) * wave * DROP_DISPLACEMENT;
+    ring += max(wave, 0.0);
   }
 
   if (uEffect == 2 && touch > 0.0) {
@@ -203,9 +235,11 @@ void main() {
   }
 
   float f = pattern((uv + warp) / uScale);
+  if (uFieldShape == 1) f = bloomField(uv + warp, f);
+  if (uFieldShape == 2) f = waterField(uv + warp, f);
   if (uEffect == 0) f -= 0.5 * touch * uStrength;
   if (uEffect == 1) f += 0.5 * touch * uStrength;
-  f += ring * 0.55;
+  f += ring * DROP_DENSITY;
   f = (f - 0.5) * uContrast + 0.5 + uBrightness;
   float show = clamp((uIntro * uReach - length(uv)) / 0.45, 0.0, 1.0);
   float v = clamp(f, 0.0, 1.0) * show * show * (3.0 - 2.0 * show);
@@ -444,9 +478,12 @@ const link = (gl: WebGL2RenderingContext, fragmentSource: string): Program | nul
   return { program, uniforms };
 };
 
+const getBloomLayout = (field: DitherField | undefined) => (field?.kind === 'bloom' ? field.layout : undefined);
+
 const toLinear = (value: number) => (value <= 0.04045 ? value / 12.92 : Math.pow((value + 0.055) / 1.055, 2.4));
 
 export const Dither = ({
+  field,
   waveSpeed = 0.05,
   waveFrequency = 3,
   waveAmplitude = 0.3,
@@ -475,6 +512,7 @@ export const Dither = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const wakeRef = useRef<(() => void) | null>(null);
   const settings: Settings = {
+    field,
     waveSpeed,
     waveFrequency,
     waveAmplitude,
@@ -582,6 +620,7 @@ export const Dither = ({
       hx: 0,
       hy: 0,
       presence: 0,
+      openness: getBloomLayout(settingsRef.current.field) && !settingsRef.current.disableAnimation ? 0 : 1,
       reveal: settingsRef.current.intro && !reduce ? 0 : 1
     };
     let raf = 0;
@@ -592,6 +631,7 @@ export const Dither = ({
     let currentMode = settingsRef.current.mode;
     let previousMode = currentMode;
     let modeChangedAt = Number.NEGATIVE_INFINITY;
+    let lastDisabled = settingsRef.current.disableAnimation;
 
     const allocate = () => {
       const s = settingsRef.current;
@@ -609,6 +649,11 @@ export const Dither = ({
     const toUv = (x: number, y: number): [number, number] => {
       const aspect = view.width / view.height;
       return [(x / view.width - 0.5) * aspect, -(y / view.height - 0.5)];
+    };
+
+    const addRipple = (x: number, y: number) => {
+      ripples.push({ x, y, age: 0 });
+      if (ripples.length > MAX_RIPPLES) ripples.shift();
     };
 
     const render = () => {
@@ -649,6 +694,8 @@ export const Dither = ({
       gl.uniform1f(w.uWaveSpeed, s.waveSpeed);
       gl.uniform1f(w.uWaveFrequency, s.waveFrequency);
       gl.uniform1f(w.uWaveAmplitude, s.waveAmplitude);
+      gl.uniform1i(w.uFieldShape, s.field ? FIELD_SHAPES[s.field.kind] : 0);
+      gl.uniform1f(w.uBloomOpenness, reduce || s.disableAnimation ? 1 : 1 - Math.pow(1 - state.openness, 3));
       gl.uniform1f(w.uScale, s.scale);
       gl.uniform1f(w.uContrast, s.contrast);
       gl.uniform1f(w.uBrightness, s.brightness);
@@ -706,6 +753,7 @@ export const Dither = ({
       const dt = last ? clamp((now - last) / 1000, 0.0005, 0.05) : 1 / 60;
       last = now;
       if (!s.disableAnimation && !reduce) state.time += dt;
+      if (getBloomLayout(s.field)) state.openness = Math.min(1, state.openness + dt / BLOOM_OPEN_SECONDS);
 
       const engaged = s.enableMouseInteraction && pointer.inside && !reduce;
       state.presence += ((engaged ? 1 : 0) - state.presence) * (1 - Math.exp(-dt / (engaged ? 0.12 : 0.35)));
@@ -778,6 +826,11 @@ export const Dither = ({
       canvas.width = Math.max(1, Math.round(width * ratio));
       canvas.height = Math.max(1, Math.round(height * ratio));
       view.ratio = canvas.width / width;
+      const bloomLayout = getBloomLayout(s.field);
+      if (bloomLayout) {
+        gl.useProgram(wave.program);
+        gl.uniform4fv(wave.uniforms.uBlooms, bloomLayout(width, height));
+      }
       allocate();
       wake();
     };
@@ -800,8 +853,7 @@ export const Dither = ({
       locate(event.clientX, event.clientY);
       if (!pointer.inside || !s.clickRipple || reduce || s.disableAnimation) return;
       const [x, y] = toUv(pointer.x, pointer.y);
-      ripples.push({ x, y, age: 0 });
-      if (ripples.length > MAX_RIPPLES) ripples.shift();
+      addRipple(x, y);
       wake();
     };
 
@@ -844,10 +896,21 @@ export const Dither = ({
     resize();
 
     let lastDpr = settingsRef.current.dpr;
+    let lastBloomLayout = getBloomLayout(settingsRef.current.field);
     wakeRef.current = () => {
       const s = settingsRef.current;
-      if (s.dpr !== lastDpr) {
+      const bloomLayout = getBloomLayout(s.field);
+      const becameActive = lastDisabled && !s.disableAnimation;
+      if (bloomLayout && becameActive) state.openness = 0;
+      if (s.field?.kind === 'water' && s.clickRipple && !reduce && becameActive) {
+        addRipple(WATER_INTRO_DROP.x, WATER_INTRO_DROP.y);
+      }
+      // Ripples stand still while paused, so a rested scene must not wake up with a frozen ring.
+      if (s.disableAnimation) ripples.length = 0;
+      lastDisabled = s.disableAnimation;
+      if (s.dpr !== lastDpr || bloomLayout !== lastBloomLayout) {
         lastDpr = s.dpr;
+        lastBloomLayout = bloomLayout;
         resize();
         return;
       }

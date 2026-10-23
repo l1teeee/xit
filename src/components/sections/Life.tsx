@@ -1,9 +1,9 @@
 import { life } from '@/data/site';
 import { MatrixTitle } from './hero/MatrixTitle';
-import { HabitatArtwork } from './life/HabitatArtwork';
-import { LifeBackdrop } from './life/LifeBackdrop';
-import { HabitatMotion } from './nature/HabitatMotion';
+import { LifeBloom } from './life/LifeBloom';
+import { getBloomLayoutStyle } from './life/bloomLayout';
 import './nature/nature.css';
+import './life/bloom.css';
 
 export function Life() {
   return (
@@ -13,16 +13,11 @@ export function Life() {
       data-scene-ground="#ffffff"
       aria-labelledby="life-title"
       className="nature-habitat"
+      style={getBloomLayoutStyle()}
     >
-      <LifeBackdrop />
-      <HabitatMotion>
-        <HabitatArtwork />
-      </HabitatMotion>
-      <div className="habitat-specimen">
-        <div className="habitat-bird" data-bird-anchor data-bird-facing="left" aria-hidden="true" />
-        <p className="habitat-specimen-note">Wild, by design.</p>
-      </div>
-      <div className="habitat-statement">
+      <LifeBloom />
+      <div className="bloom-bird" data-bird-anchor data-bird-facing="left" aria-hidden="true" />
+      <div className="bloom-copy">
         <MatrixTitle id="life-title" phrases={life.phrases} headingLevel={2} soundHint={false} variant="section" />
       </div>
     </section>

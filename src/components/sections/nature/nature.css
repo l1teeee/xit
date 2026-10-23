@@ -11,12 +11,6 @@
   font-family: var(--font-mono);
 }
 
-.nature-habitat {
-  flex-direction: column;
-  align-items: center;
-  padding-block: 4svh;
-}
-
 .habitat-motion {
   position: absolute;
   inset: 0;
@@ -24,53 +18,12 @@
   pointer-events: none;
 }
 
-.habitat-artwork { width: 100%; height: 100%; }
-
-.habitat-specimen {
-  position: relative;
-  display: flex;
-  flex: 1;
-  min-height: 0;
-  width: 100%;
-  align-items: center;
-  justify-content: center;
-  container-type: size;
-}
-
-.habitat-bird {
-  width: min(82vw, 820px, 150cqh);
-  max-width: 100%;
-  max-height: 100%;
-  aspect-ratio: 51 / 34;
-}
-
-.habitat-specimen-note {
-  position: absolute;
-  right: 16%;
-  bottom: 6%;
-  font-family: var(--font-mono);
-  font-size: 10px;
-  color: #6e6e6e;
-  letter-spacing: .06em;
-}
-
-.habitat-statement {
-  position: relative;
-  z-index: 1;
-  display: grid;
-  flex: none;
-  place-items: center;
-  padding: 3svh 20px;
-}
-
-.nature-habitat .matrix-title,
 .nature-cycle .matrix-title {
   text-shadow: none;
   color: #000000;
   --title-width: min(610px, 80vw);
 }
 
-.nature-habitat .matrix-cell.is-cursor::after,
 .nature-cycle .matrix-cell.is-cursor::after {
   background: #000000;
   box-shadow: none;
@@ -114,14 +67,10 @@
 .nature-cycle :focus-visible { outline-color: #000000; }
 
 @media (max-width: 900px) {
-  .habitat-artwork { opacity: .9; }
   .seed-head { width: min(85vw, 100cqh); right: -25vw; }
 }
 
 @media (max-width: 540px) {
-  .habitat-artwork { position: absolute; width: 936px; height: 585px; max-width: none; left: calc(50% - 310px); top: -50px; }
-  .habitat-bird { width: min(96vw, 150cqh); }
-  .habitat-specimen-note { bottom: 0; right: 12%; font-size: 9px; }
   .nature-cycle { flex-direction: column; align-items: stretch; }
   .cycle-copy { width: 100%; padding: 4svh 24px 0; }
   .nature-cycle .matrix-title { --title-width: min(610px, 80vw); }

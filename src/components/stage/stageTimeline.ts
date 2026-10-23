@@ -181,7 +181,6 @@ export function buildStageTimeline(stage: HTMLElement, reduced: boolean, coarse:
       clearSceneStyles();
       stage.style.backgroundColor = originalGround;
       for (const scene of scenes) delete scene.dataset.sceneState;
-      stage.style.removeProperty('--bird-life-width');
       bird.removeAttribute('style');
       depth.removeAttribute('style');
       hover.removeAttribute('style');

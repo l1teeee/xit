@@ -17,27 +17,39 @@ export function paintAsciiMatrix(
 ): void {
   const palette = PALETTES[ground];
   context.clearRect(0, 0, FRAME_COLS * cellSize, FRAME_ROWS * cellSize);
-  context.font = `700 ${cellSize * 0.9}px ${fontFamily}`;
+  context.font = `700 ${cellSize}px ${fontFamily}`;
+  const barMetrics = context.measureText('|');
+  const barHeight = barMetrics.actualBoundingBoxAscent + barMetrics.actualBoundingBoxDescent;
+  context.font = `700 ${cellSize * cellSize / barHeight}px ${fontFamily}`;
+  context.textBaseline = 'alphabetic';
+  const finalBarMetrics = context.measureText('|');
+  const bulletMetrics = context.measureText('\u2022');
   context.textAlign = 'center';
-  context.textBaseline = 'middle';
 
   for (let row = 0; row < FRAME_ROWS; row++) {
     for (let col = 0; col < FRAME_COLS; col++) {
       const tone = tones[row * FRAME_COLS + col];
       let glyph: string;
+      let glyphMetrics: TextMetrics;
       if (tone === TONE_LIGHT) {
-        glyph = ':';
+        glyph = '•';
         context.fillStyle = palette[0];
+        glyphMetrics = bulletMetrics;
       } else if (tone === TONE_MID) {
-        glyph = '+';
+        glyph = '•';
         context.fillStyle = palette[1];
+        glyphMetrics = bulletMetrics;
       } else if (tone === TONE_DARK) {
         glyph = '|';
         context.fillStyle = palette[2];
+        glyphMetrics = finalBarMetrics;
       } else {
         continue;
       }
-      context.fillText(glyph, (col + 0.5) * cellSize, (row + 0.5) * cellSize);
+      const glyphCenterOffset = (
+        glyphMetrics.actualBoundingBoxAscent - glyphMetrics.actualBoundingBoxDescent
+      ) / 2;
+      context.fillText(glyph, (col + 0.5) * cellSize, (row + 0.5) * cellSize + glyphCenterOffset);
     }
   }
 }
